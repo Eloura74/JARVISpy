@@ -172,11 +172,18 @@ function showWebResults(data) {
   (data.results || []).forEach((res) => {
     const card = document.createElement("div");
     card.className = "result-card";
+
+    // Ajout conditionnel de la miniature (récupérée de Tavily)
+    const imgHtml = res.image
+      ? `<img src="${res.image}" class="result-thumbnail" alt="thumbnail" />`
+      : "";
+
     card.innerHTML = `
           <div class="result-number">${res.id}</div>
           <div class="result-content">
+              ${imgHtml}
               <h3>${res.title}</h3>
-              <p>${res.snippet.substring(0, 120)}...</p>
+              <p>${res.snippet.substring(0, 150)}...</p>
               <span class="url">${res.url.substring(0, 50)}...</span>
           </div>
       `;

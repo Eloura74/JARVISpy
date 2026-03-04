@@ -1,6 +1,7 @@
 import urllib.parse
-from ddgs import DDGS
+from tavily import TavilyClient
 from core.logger import get_logger
+from core.config import settings
 from modules.system.windows import open_file_or_url
 
 logger = get_logger("system.web")
@@ -17,31 +18,42 @@ def interactive_web_search(query: str, max_results: int = 5) -> str:
     Returns:
         str: Un message secret interne destiné au LLM lui dictant sa prochaine action.
     """
-    logger.info(f"Recherche Web Interactive demandée: '{query}'")
+    logger.info(f"Recherche Web Interactive demandée (Tavily): '{query}'")
     try:
         from core.event_bus import bus
         import asyncio
         results = []
         
-        # Astuce absolue pour DuckDuckGo : la région 'fr-fr' ne suffit parfois pas
-        # sur les mots génériques anglais ou très globaux (ex: 'intelligence').
-        # On force la requête en forçant des résultats en français.
-        search_query = query
-        if not any(w in query.lower() for w in ["france", "français", "francais", " fr "]):
-            search_query = f"{query} en français"
+        if not settings.tavily_api_key:
+            return "Désolé Monsieur, mais la clé API Tavily n'est pas configurée dans mon système."
             
-        with DDGS() as ddgs:
-            # On force le backend "lite" qui est le plus robuste pour le français actuellement
-            for i, r in enumerate(ddgs.text(search_query, max_results=max_results, region='fr-fr', safesearch='moderate', backend='lite')):
-                results.append({
-                    "id": i + 1,
-                    "title": r.get('title', 'Sans Titre'),
-                    "url": r.get('href', '#'),
-                    "snippet": r.get('body', '')
-                })
+        tavily = TavilyClient(api_key=settings.tavily_api_key)
+        
+        # On peut laisser la query originale, Tavily a son propre NLP contextuel
+        search_query = query
+        if "franç" not in query.lower() and "france" not in query.lower():
+            search_query = f"{query} (réponses en français)"
+            
+        # Exécution de la requête via Tavily en mode avancé pour de beaux snippets
+        response = tavily.search(query=search_query, search_depth="advanced", include_images=True, max_results=max_results)
+        
+        # Les images retournées par Tavily sont dans une liste séparée
+        images = response.get('images', [])
+        
+        for i, r in enumerate(response.get('results', [])):
+            # On essaie d'associer une image à l'article si Tavily en a trouvé
+            img_url = images[i] if i < len(images) else None
+            
+            results.append({
+                "id": i + 1,
+                "title": r.get('title', 'Sans Titre'),
+                "url": r.get('url', '#'),
+                "snippet": r.get('content', ''),
+                "image": img_url
+            })
                 
         if not results:
-            return f"Je n'ai trouvé aucun résultat pour '{query}'."
+            return f"Je n'ai trouvé aucun résultat pertinent sur le web pour '{query}'."
 
         # Broadcast au WebSocket pour apparition Popup de manière thread-safe
         if hasattr(bus, 'main_loop') and bus.main_loop:
