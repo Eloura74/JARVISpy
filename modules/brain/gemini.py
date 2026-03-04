@@ -39,10 +39,13 @@ class Brain:
             )
             from modules.system.web import interactive_web_search, close_web_results
             
-            # Mise à jour des instructions pour indiquer qu'il maîtrise les fenêtres
+            # Mise à jour des instructions pour indiquer qu'il maîtrise les fenêtres et la correction STT
             self.system_instruction += (
                 " Tu as le pouvoir absolu sur le système Windows. Tu peux trouver et 'ouvrir', 'fermer', "
-                "'réduire', 'agrandir' et 'déplacer' les fenêtres des applications."
+                "'réduire', 'agrandir' et 'déplacer' les fenêtres des applications. "
+                "CRITIQUE: Le module de transcription vocale fait souvent des erreurs phonétiques (ex: 'Fadila' pour 'FileZilla', "
+                "'winter me' pour 'WindTerm', 'codex' pour 'VS Code'). UTILISE TON INTELLIGENCE pour DÉDUIRE le vrai "
+                "nom du logiciel voulu et envoie LE BON NOM (corrigé) aux appels de fonctions."
             )
             
             self.client = genai.Client(api_key=settings.gemini_api_key)

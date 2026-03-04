@@ -42,15 +42,19 @@ def find_and_launch_app(app_name: str) -> str:
     try:
         app_name_lower = app_name.lower().strip()
         
-        # 1. Correspondances communes d'exécutables
+        # 1. Phonétique et correspondances communes (les alias)
         app_map = {
             "bloc-notes": "notepad", "calculatrice": "calc",
             "navigateur": "chrome", "explorateur": "explorer",
-            "cmd": "cmd", "terminal": "wt"
+            "cmd": "cmd", "terminal": "wt", 
+            "winter": "windterm", "winter me": "windterm", 
+            "hiver": "windterm", # Au cas où il traduit l'audio
+            "codex": "code" # Pour VS Code souvent appelé code / codex
         }
         
         if app_name_lower in app_map:
             target = app_map[app_name_lower]
+            # On vérifie si c'est un exécutable local dans le PATH ou Registre
             subprocess.Popen(f"start {target}", shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
             return f"Ordre de lancement envoyé pour '{target}' (raccourci système)."
             
@@ -90,48 +94,98 @@ def _get_hwnds_for_pid(pid):
     return hwnds
 
 def _find_window_by_title(title_chunk: str):
-    """Trouve le premier HWND dont le titre de fenêtre contient le texte recherché"""
+    """Trouve un HWND dont le titre correspond de près (Fuzzy Matching) ou contient le texte"""
+    active_windows = {}
+    
     def callback(hwnd, hwnds):
-        if win32gui.IsWindowVisible(hwnd):
+        if win32gui.IsWindowVisible(hwnd) and win32gui.GetWindowText(hwnd):
             title = win32gui.GetWindowText(hwnd).lower()
-            if title_chunk.lower() in title:
-                hwnds.append(hwnd)
+            active_windows[title] = hwnd
         return True
     
-    hwnds = []
-    win32gui.EnumWindows(callback, hwnds)
-    return hwnds[0] if hwnds else None
+    win32gui.EnumWindows(callback, None)
+    
+    # 1. Correspondance exacte ou partielle (comme avant)
+    title_chunk_lower = title_chunk.lower()
+    for title, hwnd in active_windows.items():
+        if title_chunk_lower in title:
+            return hwnd
+            
+    # 2. Correspondance Floue (Fuzzy Matching) si le premier échoue
+    # On découpe les titres de fenêtres pour match "Bambu" avec "Bambu Studio"
+    all_words = []
+    word_to_hwnd = {}
+    for title, hwnd in active_windows.items():
+        # Split par espaces ou tirets
+        words = re.split(r'[-\s]+', title)
+        for w in words:
+            if len(w) > 3: # Ignorer les mots trop courts
+                all_words.append(w)
+                word_to_hwnd[w] = hwnd
+                
+    # On compare chaque mot de la requête avec les mots des titres
+    query_words = re.split(r'[-\s]+', title_chunk_lower)
+    for qw in query_words:
+        if len(qw) > 3:
+            matches = difflib.get_close_matches(qw, all_words, n=1, cutoff=0.7)
+            if matches:
+                logger.info(f"Fuzzy match HWND trouvé: '{qw}' -> '{matches[0]}'")
+                return word_to_hwnd[matches[0]]
+                
+    return None
 
 def close_application(app_name: str) -> str:
     """
-    Recherche et ferme une application en cours d'exécution.
+    Recherche et ferme une application en cours d'exécution de manière tolérante (Fuzzy).
     
     Args:
-        app_name (str): Nom de l'application (ex: "notepad", "chrome").
+        app_name (str): Nom de l'application (ex: "bambus studio", "chrome").
     """
-    logger.info(f"Demande de fermeture: {app_name}")
+    logger.info(f"Demande de fermeture (Smart): {app_name}")
     closed_count = 0
-    target = app_name.lower().replace(".exe", "")
+    app_name_lower = app_name.lower().replace(".exe", "")
     
     try:
-        for proc in psutil.process_iter(['pid', 'name']):
-            try:
-                if proc.info['name'] and target in proc.info['name'].lower():
-                    # Fermeture propre si possible via win32gui
-                    hwnds = _get_hwnds_for_pid(proc.info['pid'])
-                    for hwnd in hwnds:
-                        win32gui.PostMessage(hwnd, win32con.WM_CLOSE, 0, 0)
+        # Phase 1: On tente par fenêtre (plus "propre" et marche avec les noms d'apps bizarres)
+        target_hwnd = _find_window_by_title(app_name_lower)
+        if target_hwnd:
+            _, pid = win32process.GetWindowThreadProcessId(target_hwnd)
+            hwnds = _get_hwnds_for_pid(pid)
+            for hwnd in hwnds:
+                win32gui.PostMessage(hwnd, win32con.WM_CLOSE, 0, 0)
+            logger.info("Fermeture propre envoyée (WM_CLOSE).")
+            closed_count = len(hwnds)
+            
+        # Phase 2: Kill en profondeur process par process si rien n'a été fermé via HWND
+        if closed_count == 0:
+            active_procs = {}
+            for proc in psutil.process_iter(['pid', 'name']):
+                try:
+                    if proc.info['name']:
+                        proc_name = proc.info['name'].lower().replace('.exe', '')
+                        active_procs[proc_name] = proc
+                except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.ZombieProcess):
+                    pass
+            
+            # Substring strict d'abord
+            procs_to_kill = [proc for name, proc in active_procs.items() if app_name_lower in name]
+            
+            # Fuzzy Matching (si l'utilisateur a prononcé de travers)
+            if not procs_to_kill:
+                matches = difflib.get_close_matches(app_name_lower, active_procs.keys(), n=1, cutoff=0.6)
+                if matches:
+                    logger.info(f"Process PID Fuzzy match: '{app_name_lower}' -> '{matches[0]}'")
+                    procs_to_kill.append(active_procs[matches[0]])
                     
-                    # Si pas de fenêtre, on termine violemment le processus
-                    if not hwnds:
-                        proc.kill()
-                    
+            for p in procs_to_kill:
+                try:
+                    p.kill()
                     closed_count += 1
-            except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.ZombieProcess):
-                pass
-                
+                except Exception:
+                    pass
+                    
         if closed_count > 0:
-            return f"J'ai localisé et fermé {closed_count} processus correspondant à '{app_name}'."
+            return f"Opération réussie. Cible fermée."
         else:
             return f"Je n'ai trouvé aucun programme nommé '{app_name}' en cours d'exécution."
             
