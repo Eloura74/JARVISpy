@@ -33,10 +33,17 @@ class Brain:
 
         try:
             from modules.system.windows import (
-                open_application, get_system_time, get_battery_status,
+                find_and_launch_app, close_application, manage_window_state, move_window_to_screen,
+                get_system_time, get_battery_status,
                 list_directory, read_file, write_to_file, open_file_or_url
             )
             from modules.system.web import interactive_web_search, close_web_results
+            
+            # Mise à jour des instructions pour indiquer qu'il maîtrise les fenêtres
+            self.system_instruction += (
+                " Tu as le pouvoir absolu sur le système Windows. Tu peux trouver et 'ouvrir', 'fermer', "
+                "'réduire', 'agrandir' et 'déplacer' les fenêtres des applications."
+            )
             
             self.client = genai.Client(api_key=settings.gemini_api_key)
             
@@ -47,13 +54,14 @@ class Brain:
                     system_instruction=self.system_instruction,
                     temperature=0.7,
                     tools=[
-                        open_application, get_system_time, get_battery_status,
+                        find_and_launch_app, close_application, manage_window_state, move_window_to_screen,
+                        get_system_time, get_battery_status,
                         list_directory, read_file, write_to_file,
                         open_file_or_url, interactive_web_search, close_web_results
-                    ] # Injection des capacités système
+                    ] # Injection des capacités système complètes
                 )
             )
-            logger.info(f"Cerveau J.A.R.V.I.S initialisé avec {self.model_name} et les outils système.")
+            logger.info(f"Cerveau J.A.R.V.I.S initialisé avec {self.model_name} et les outils système avancés.")
             
         except Exception as e:
             logger.error(f"Erreur lors de l'initialisation de Gemini: {e}")
@@ -91,14 +99,18 @@ class Brain:
             
         import asyncio
         from modules.system.windows import (
-            open_application, get_system_time, get_battery_status,
+            find_and_launch_app, close_application, manage_window_state, move_window_to_screen,
+            get_system_time, get_battery_status,
             list_directory, read_file, write_to_file, open_file_or_url
         )
         from modules.system.web import interactive_web_search, close_web_results
         
         # Dictionnaire manuel des outils disponibles (pour le mapping)
         tools_map = {
-            "open_application": open_application,
+            "find_and_launch_app": find_and_launch_app,
+            "close_application": close_application,
+            "manage_window_state": manage_window_state,
+            "move_window_to_screen": move_window_to_screen,
             "get_system_time": get_system_time,
             "get_battery_status": get_battery_status,
             "list_directory": list_directory,

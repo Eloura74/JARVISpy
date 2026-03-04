@@ -5,45 +5,221 @@ from core.logger import get_logger
 
 logger = get_logger("system.windows")
 
-def open_application(app_name: str) -> str:
+import win32gui
+import win32con
+import win32process
+import psutil
+from screeninfo import get_monitors
+import glob
+import difflib
+
+def _get_all_start_menu_apps():
+    """Récupère tous les raccourcis du menu Démarrer Windows (Commun et Utilisateur)"""
+    apps = {}
+    paths = [
+        os.path.join(os.environ.get('PROGRAMDATA', 'C:\\ProgramData'), r'Microsoft\Windows\Start Menu\Programs'),
+        os.path.join(os.environ.get('APPDATA', ''), r'Microsoft\Windows\Start Menu\Programs')
+    ]
+    
+    for base_path in paths:
+        if os.path.exists(base_path):
+            for root, dirs, files in os.walk(base_path):
+                for file in files:
+                    if file.lower().endswith('.lnk'):
+                        name = os.path.splitext(file)[0].lower()
+                        apps[name] = os.path.join(root, file)
+    return apps
+
+def find_and_launch_app(app_name: str) -> str:
     """
-    Ouvre une application sur le système Windows.
-    Appelé par l'IA lorsqu'elle cherche à ouvrir un programme.
+    Ouvre une application sur le système Windows de manière intelligente (sans chemin en dur).
+    Cherche l'exécutable via le Menu Démarrer (Fuzzy Matching) ou via le Shell.
     
     Args:
-        app_name (str): Le nom de l'application à ouvrir.
+        app_name (str): Le nom de l'application à ouvrir (ex: "bambus studio", "google chrome").
     """
-    logger.info(f"Demande d'ouverture de l'application: {app_name}")
+    logger.info(f"Recherche intelligente et ouverture de: {app_name}")
     try:
-        # Correspondances communes
+        app_name_lower = app_name.lower().strip()
+        
+        # 1. Correspondances communes d'exécutables
         app_map = {
-            "bloc-notes": "notepad.exe",
-            "calculatrice": "calc.exe",
-            "navigateur": "chrome.exe", # ou msedge.exe
-            "explorateur": "explorer.exe",
-            "cmd": "cmd.exe",
-            "terminal": "wt.exe"
+            "bloc-notes": "notepad", "calculatrice": "calc",
+            "navigateur": "chrome", "explorateur": "explorer",
+            "cmd": "cmd", "terminal": "wt"
         }
         
-        target = app_map.get(app_name.lower().strip(), None)
+        if app_name_lower in app_map:
+            target = app_map[app_name_lower]
+            subprocess.Popen(f"start {target}", shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            return f"Ordre de lancement envoyé pour '{target}' (raccourci système)."
+            
+        # 2. Recherche par similarité (Fuzzy Matching) dans le Menu Démarrer
+        start_menu_apps = _get_all_start_menu_apps()
         
-        # Sécurité anti-injection shell : on n'accepte que des noms de fichiers alphanumériques basiques
-        if not target:
-            # Nettoyage strict (lettres, chiffres, tirets, points)
-            clean_name = re.sub(r'[^a-zA-Z0-9.\-]', '', app_name)
-            if not clean_name.endswith('.exe'):
-                target = f"{clean_name}.exe"
-            else:
-                target = clean_name
-                
-        # os.startfile est plus sûr sur Windows que Popen avec shell=True
-        os.startfile(target)
-        return f"Application '{target}' lancée avec succès."
-    except FileNotFoundError:
-        return f"Erreur: L'application '{target}' est introuvable."
+        # On cherche la correspondance la plus proche (tolérance d'orthographe)
+        matches = difflib.get_close_matches(app_name_lower, start_menu_apps.keys(), n=1, cutoff=0.6)
+        
+        if matches:
+            best_match = matches[0]
+            shortcut_path = start_menu_apps[best_match]
+            logger.info(f"Similarité trouvée: '{app_name}' -> '{best_match}'")
+            os.startfile(shortcut_path)
+            return f"Application '{best_match}' trouvée (correction IA) et lancée avec succès."
+            
+        # 3. Fallback: On tente de le lancer via le Shell "start" (si enregistré dans les variables PATH)
+        clean_name = re.sub(r'[^a-zA-Z0-9.\- ]', '', app_name_lower)
+        subprocess.Popen(f"start {clean_name}", shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        return f"Aucun raccourci exact trouvé. Demande de lancement manuel envoyée pour '{clean_name}'."
+        
     except Exception as e:
         logger.error(f"Erreur d'ouverture d'application ({app_name}): {e}")
         return f"Erreur lors de l'ouverture de l'application: {str(e)}"
+
+def _get_hwnds_for_pid(pid):
+    """Trouve toutes les fenêtres (HWND) appartenant à un PID donné"""
+    def callback(hwnd, hwnds):
+        if win32gui.IsWindowVisible(hwnd) and win32gui.IsWindowEnabled(hwnd):
+            _, found_pid = win32process.GetWindowThreadProcessId(hwnd)
+            if found_pid == pid:
+                hwnds.append(hwnd)
+        return True
+    
+    hwnds = []
+    win32gui.EnumWindows(callback, hwnds)
+    return hwnds
+
+def _find_window_by_title(title_chunk: str):
+    """Trouve le premier HWND dont le titre de fenêtre contient le texte recherché"""
+    def callback(hwnd, hwnds):
+        if win32gui.IsWindowVisible(hwnd):
+            title = win32gui.GetWindowText(hwnd).lower()
+            if title_chunk.lower() in title:
+                hwnds.append(hwnd)
+        return True
+    
+    hwnds = []
+    win32gui.EnumWindows(callback, hwnds)
+    return hwnds[0] if hwnds else None
+
+def close_application(app_name: str) -> str:
+    """
+    Recherche et ferme une application en cours d'exécution.
+    
+    Args:
+        app_name (str): Nom de l'application (ex: "notepad", "chrome").
+    """
+    logger.info(f"Demande de fermeture: {app_name}")
+    closed_count = 0
+    target = app_name.lower().replace(".exe", "")
+    
+    try:
+        for proc in psutil.process_iter(['pid', 'name']):
+            try:
+                if proc.info['name'] and target in proc.info['name'].lower():
+                    # Fermeture propre si possible via win32gui
+                    hwnds = _get_hwnds_for_pid(proc.info['pid'])
+                    for hwnd in hwnds:
+                        win32gui.PostMessage(hwnd, win32con.WM_CLOSE, 0, 0)
+                    
+                    # Si pas de fenêtre, on termine violemment le processus
+                    if not hwnds:
+                        proc.kill()
+                    
+                    closed_count += 1
+            except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.ZombieProcess):
+                pass
+                
+        if closed_count > 0:
+            return f"J'ai localisé et fermé {closed_count} processus correspondant à '{app_name}'."
+        else:
+            return f"Je n'ai trouvé aucun programme nommé '{app_name}' en cours d'exécution."
+            
+    except Exception as e:
+        return f"Erreur lors de la fermeture: {str(e)}"
+
+def manage_window_state(app_name: str, state: str) -> str:
+    """
+    Réduit (minimise) ou Agrandit (maximise) une fenêtre en cours d'exécution.
+    
+    Args:
+        app_name (str): Nom de l'application appartenant à la fenêtre.
+        state (str): 'minimize' pour réduire, 'maximize' pour agrandir en plein écran, 'restore' pour vue normale.
+    """
+    logger.info(f"Demande état fenêtre: {app_name} -> {state}")
+    hwnd = _find_window_by_title(app_name)
+    
+    if not hwnd:
+        return f"Je n'ai pas trouvé de fenêtre ouverte correspondant à '{app_name}'."
+        
+    try:
+        if state == "minimize" or "rédui" in state.lower():
+            win32gui.ShowWindow(hwnd, win32con.SW_MINIMIZE)
+            action = "réduite"
+        elif state == "maximize" or "agrandi" in state.lower():
+            win32gui.ShowWindow(hwnd, win32con.SW_MAXIMIZE)
+            action = "agrandie"
+        else:
+            win32gui.ShowWindow(hwnd, win32con.SW_RESTORE)
+            action = "restaurée"
+            
+        # Place la fenêtre au premier plan
+        if action != "réduite":
+            win32gui.SetForegroundWindow(hwnd)
+            
+        return f"La fenêtre '{app_name}' a été {action}."
+    except Exception as e:
+        return f"Erreur manipulation fenêtre: {str(e)}"
+
+def move_window_to_screen(app_name: str, screen_number: int) -> str:
+    """
+    Déplace la fenêtre d'une application sur un autre écran (1, 2, 3...) dans une configuration Multi-écrans.
+    
+    Args:
+        app_name (str): Nom de la fenêtre à déplacer.
+        screen_number (int): Numéro de l'écran de destination (1 pour l'écran primaire, 2 pour le secondaire, etc).
+    """
+    logger.info(f"Demande de déplacement de {app_name} vers écran {screen_number}")
+    
+    try:
+        monitors = get_monitors()
+        if not monitors:
+            return "Impossible de détecter les écrans connectés sur ce système."
+            
+        if screen_number < 1 or screen_number > len(monitors):
+            return f"Écran {screen_number} introuvable. Vous n'avez que {len(monitors)} écran(s) détecté(s)."
+            
+        target_monitor = monitors[screen_number - 1] # Indexe base 0
+        
+        hwnd = _find_window_by_title(app_name)
+        if not hwnd:
+            return f"Je n'ai pas trouvé la fenêtre '{app_name}'."
+            
+        # Si la fenêtre est maximisée, il faut la réstaurer avant de la bouger
+        placement = win32gui.GetWindowPlacement(hwnd)
+        if placement[1] == win32con.SW_SHOWMAXIMIZED:
+            win32gui.ShowWindow(hwnd, win32con.SW_RESTORE)
+            
+        # Lecture des dimensions actuelles de la fenêtre
+        rect = win32gui.GetWindowRect(hwnd)
+        w = rect[2] - rect[0]
+        h = rect[3] - rect[1]
+        
+        # Déplacement au milieu supérieur de l'écran cible
+        new_x = target_monitor.x + (target_monitor.width // 4)
+        new_y = target_monitor.y + 50
+        
+        win32gui.MoveWindow(hwnd, new_x, new_y, w, h, True)
+        
+        # On remet en maximisé si c'était le cas
+        if placement[1] == win32con.SW_SHOWMAXIMIZED:
+            win32gui.ShowWindow(hwnd, win32con.SW_MAXIMIZE)
+            
+        win32gui.SetForegroundWindow(hwnd)
+        return f"J'ai téléporté '{app_name}' sur votre écran numéro {screen_number}."
+        
+    except Exception as e:
+        return f"Erreur lors du déplacement de l'écran: {str(e)}"
 
 def open_file_or_url(target: str) -> str:
     """
