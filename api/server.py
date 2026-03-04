@@ -1,8 +1,9 @@
-import asyncio
+import os
 import json
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import JSONResponse, HTMLResponse
 import uvicorn
 
 from core.config import settings
@@ -26,6 +27,11 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Configuration des fichiers statiques pour le WebUI
+static_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "web")
+os.makedirs(static_dir, exist_ok=True)
+app.mount("/static", StaticFiles(directory=static_dir), name="static")
+
 # Liste des connexions WebSocket actives
 active_connections = []
 
@@ -42,10 +48,14 @@ async def shutdown_event():
     logger.info("Arrêt du serveur API...")
     await bus.emit("system.api_stopped", {})
 
-@app.get("/")
+@app.get("/", response_class=HTMLResponse)
 async def root():
-    """Point d'entrée de l'API pour vérifier son statut"""
-    return {"status": "online", "app": settings.app_name, "version": "0.1.0"}
+    """Point d'entrée de l'API - Retourne l'interface WebUI par défaut"""
+    index_path = os.path.join(static_dir, "index.html")
+    if os.path.exists(index_path):
+        with open(index_path, "r", encoding="utf-8") as f:
+            return f.read()
+    return "<h1>J.A.R.V.I.S API Online</h1><p>Interface Web introuvable.</p>"
 
 @app.get("/health")
 async def health_check():
@@ -152,12 +162,27 @@ def _setup_bus_to_ws_bridge():
     """
     Fonction utilitaire pour s'abonner aux événements du Core 
     et les renvoyer automatiquement vers le WebSocket (UI).
-    On pourrait rajouter des filtres pour ne pas TOUT envoyer.
     """
-    async def bridge_handler(*args, **kwargs):
-        # Cette fonction captera l'événement global
-        # MAIS dans notre architecture on va s'abonner manuellement depuis main.py ou api_manager.py
-        pass
+    events_to_forward = [
+        "audio.speech_recognized",
+        "brain.thinking",
+        "brain.response_generated",
+        "audio.tts_started",
+        "audio.tts_stopped",
+        "ui.show_web_results",
+        "ui.hide_web_results"
+    ]
+    
+    for event_name in events_to_forward:
+        def make_handler(name):
+            async def bridge_handler(payload):
+                await broadcast_to_websockets(name, payload)
+            return bridge_handler
+            
+        bus.subscribe(event_name, make_handler(event_name))
+
+# On appelle le pont au chargement du module
+_setup_bus_to_ws_bridge()
         
 def start_server():
     """Fonction utilitaire pour lancer le serveur (si l'on ne passe pas par uvicorn en ligne de commande)"""

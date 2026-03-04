@@ -16,8 +16,17 @@ async def on_system_start(event_data: Dict[str, Any]):
     logger.info(f"Détails: {event_data.get('message', '')} - Version: {event_data.get('version', 'inconnue')}")
 
 async def on_api_started(event_data: Dict[str, Any]):
-    logger.info(f"API démarrée sur http://{event_data.get('host')}:{event_data.get('port')}")
-    logger.info(f"WebSocket disponible sur ws://{event_data.get('host')}:{event_data.get('port')}/ws")
+    host = event_data.get('host', '127.0.0.1')
+    port = event_data.get('port', 8000)
+    url = f"http://{host}:{port}"
+    
+    logger.info(f"API démarrée sur {url}")
+    logger.info(f"WebSocket disponible sur ws://{host}:{port}/ws")
+    
+    # Ouverture automatique de l'interface dans le navigateur par défaut
+    import webbrowser
+    webbrowser.open(url)
+    logger.info("Navigateur web ouvert sur l'interface de J.A.R.V.I.S.")
 
 async def on_client_connected(event_data: Dict[str, Any]):
     logger.info(f"Interface client connectée depuis {event_data.get('ip')}")
@@ -47,6 +56,10 @@ def setup_modules():
 async def main():
     logger.info(f"========== Démarrage de {settings.app_name} ==========")
     logger.info(f"Environnement: {settings.environment}")
+    
+    # Très important pour les workers asynchrones (TTS, STT, Web) :
+    # Enregistrement de l'event loop principal dans le bus global
+    bus.main_loop = asyncio.get_running_loop()
     
     # Inscription des événements
     bus.subscribe("system.start", on_system_start)

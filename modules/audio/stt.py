@@ -47,16 +47,15 @@ class SpeechToText:
             text = recognizer.recognize_google(audio, language="fr-FR")
             logger.info(f"Reconnu : '{text}'")
             
-            # On émet l'événement de manière thread-safe vers la boucle asyncio principale
-            try:
-                loop = asyncio.get_running_loop()
+            # On émet l'événement vers la boucle asyncio principale
+            target_loop = getattr(bus, 'main_loop', None)
+            if target_loop and not target_loop.is_closed():
                 asyncio.run_coroutine_threadsafe(
                     bus.emit("audio.speech_recognized", {"text": text}),
-                    loop
+                    target_loop
                 )
-            except RuntimeError:
-                # Si pas de loop (bizarre, mais sécurité), on crée une task temporaire
-                asyncio.run(bus.emit("audio.speech_recognized", {"text": text}))
+            else:
+                logger.error("STT ne trouve pas la boucle asyncio principale (bus.main_loop)")
                 
         except sr.UnknownValueError:
             logger.debug("Audio non compris.")

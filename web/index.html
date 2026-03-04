@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>J.A.R.V.I.S Interface</title>
+    <link rel="stylesheet" href="/static/style.css" />
+    <!-- Google Fonts pour un look moderne -->
+    <link
+      href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Rajdhani:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+  </head>
+  <body>
+    <div class="background-overlay"></div>
+
+    <div class="glass-container">
+      <!-- HEADER -->
+      <header class="header">
+        <div class="logo">
+          <div class="core-reactor"></div>
+          <h1>J.A.R.V.I.S. <span class="version">v0.1.0</span></h1>
+        </div>
+        <div class="status-bar">
+          <div class="status-indicator offline" id="connection-status"></div>
+          <span id="connection-text">Hors ligne</span>
+        </div>
+      </header>
+
+      <!-- MAIN CONTENT -->
+      <main class="main-content">
+        <!-- Colonne Gauche: Système et Statut -->
+        <div class="column left-panel">
+          <div class="panel glass-panel">
+            <h2>Statut Système</h2>
+            <ul class="status-list">
+              <li>
+                <span class="label">Microphone:</span>
+                <span class="value default">En attente</span>
+              </li>
+              <li>
+                <span class="label">Module TTS:</span>
+                <span class="value" id="tts-status">Inactif</span>
+              </li>
+              <li>
+                <span class="label">Brain (Gemini):</span>
+                <span class="value" id="brain-status">En veille</span>
+              </li>
+            </ul>
+          </div>
+
+          <div class="panel glass-panel orb-container">
+            <div class="ai-orb" id="ai-orb">
+              <div class="ring ring-1"></div>
+              <div class="ring ring-2"></div>
+              <div class="ring ring-3"></div>
+              <div class="core"></div>
+            </div>
+            <div class="orb-label" id="orb-label">I.D.L.E.</div>
+          </div>
+        </div>
+
+        <!-- Colonne Droite: Logs et Dialogue -->
+        <div class="column right-panel">
+          <div class="panel glass-panel terminal-panel">
+            <h2>Flux de données</h2>
+            <div class="terminal" id="log-terminal">
+              <!-- Les logs apparaîtront ici -->
+              <div class="log-line system">
+                Initialisation de l'interface graphique...
+              </div>
+            </div>
+          </div>
+
+          <div class="panel glass-panel transcript-panel">
+            <h2>Transcriptions</h2>
+            <div class="transcript-box" id="transcript-box">
+              <!-- Dialogue Utilisateur/JARVIS -->
+            </div>
+          </div>
+        </div>
+      </main>
+
+      <!-- ZONE POUR LES POPUPS / WIDGETS GENS PAR LE WEB SEARCH -->
+      <div id="widgets-container" class="widgets-container hidden">
+        <!-- Injected via JS -->
+      </div>
+    </div>
+
+    <script src="/static/app.js"></script>
+  </body>
+</html>

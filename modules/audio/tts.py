@@ -42,10 +42,12 @@ class TextToSpeech:
                 break
                 
             try:
+                main_loop = getattr(bus, 'main_loop', None)
                 # Notification de début de parole (pour couper le micro STT)
-                if self.loop and not self.loop.is_closed():
-                    # Lancement d'un callback asynchrone pour l'événement
-                    asyncio.run_coroutine_threadsafe(bus.emit("audio.tts_started", {}), self.loop)
+                if main_loop and not main_loop.is_closed():
+                    main_loop.call_soon_threadsafe(
+                        lambda: asyncio.create_task(bus.emit("audio.tts_started", {}))
+                    )
                     
                 logger.debug("Début lecture TTS")
                 
@@ -67,9 +69,12 @@ class TextToSpeech:
                 except:
                     pass
             finally:
+                main_loop = getattr(bus, 'main_loop', None)
                 # Notification de fin de parole (pour réactiver le micro STT)
-                if self.loop and not self.loop.is_closed():
-                    asyncio.run_coroutine_threadsafe(bus.emit("audio.tts_stopped", {}), self.loop)
+                if main_loop and not main_loop.is_closed():
+                    main_loop.call_soon_threadsafe(
+                        lambda: asyncio.create_task(bus.emit("audio.tts_stopped", {}))
+                    )
                     
                 self.queue.task_done()
 
@@ -80,14 +85,6 @@ class TextToSpeech:
             return
             
         logger.debug(f"TTS met en file d'attente : {text[:30]}...")
-        
-        # Sauvegarde de la boucle asynchrone principale lors de la première interaction
-        if self.loop is None:
-            try:
-                self.loop = asyncio.get_running_loop()
-            except RuntimeError:
-                pass
-                
         self.queue.put(text)
 
     def start(self):

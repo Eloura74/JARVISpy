@@ -36,7 +36,7 @@ class Brain:
                 open_application, get_system_time, get_battery_status,
                 list_directory, read_file, write_to_file, open_file_or_url
             )
-            from modules.system.web import web_search
+            from modules.system.web import interactive_web_search, close_web_results
             
             self.client = genai.Client(api_key=settings.gemini_api_key)
             
@@ -49,7 +49,7 @@ class Brain:
                     tools=[
                         open_application, get_system_time, get_battery_status,
                         list_directory, read_file, write_to_file,
-                        open_file_or_url, web_search
+                        open_file_or_url, interactive_web_search, close_web_results
                     ] # Injection des capacités système
                 )
             )
@@ -94,7 +94,7 @@ class Brain:
             open_application, get_system_time, get_battery_status,
             list_directory, read_file, write_to_file, open_file_or_url
         )
-        from modules.system.web import web_search
+        from modules.system.web import interactive_web_search, close_web_results
         
         # Dictionnaire manuel des outils disponibles (pour le mapping)
         tools_map = {
@@ -105,35 +105,20 @@ class Brain:
             "read_file": read_file,
             "write_to_file": write_to_file,
             "open_file_or_url": open_file_or_url,
-            "web_search": web_search
+            "interactive_web_search": interactive_web_search,
+            "close_web_results": close_web_results
         }
             
+        main_loop = asyncio.get_running_loop()
+        bus.main_loop = main_loop # Stocké pour les helpers synchrones (comme web.py)
+        
         def blocking_call():
+            # Google-genai exécute AUTOMATIQUEMENT les fonctions dans ce thread
             response = self.chat_session.send_message(text)
             
-            # Gestion basique du Function Calling (si le LLM a décidé d'utiliser un outil)
+            # S'il y a toujours des fonctions en attente (normalement non car le SDK gère l'aller-retour complet)
             if response.function_calls:
-                for fn in response.function_calls:
-                    logger.info(f"J.A.R.V.I.S exécute l'outil: {fn.name} avec {fn.args}")
-                    
-                    if fn.name in tools_map:
-                        try:
-                            # Exécution de la commande locale
-                            tool_result = tools_map[fn.name](**fn.args)
-                            logger.debug(f"Résultat de l'outil: {tool_result}")
-                        except Exception as tool_e:
-                            tool_result = f"Erreur lors de l'exécution: {str(tool_e)}"
-                            logger.error(tool_result)
-                            
-                        # Renvoi du résultat au LLM pour qu'il formule sa réponse finale
-                        response = self.chat_session.send_message(
-                            [types.Part.from_function_response(
-                                name=fn.name,
-                                response={"result": tool_result}
-                            )]
-                        )
-                    else:
-                        logger.warning(f"Outil inconnu demandé par le LLM: {fn.name}")
+                 logger.warning("Des appels de fonctions n'ont pas été gérés automatiquement par le SDK.")
                         
             return response.text
             
