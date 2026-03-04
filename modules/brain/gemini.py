@@ -44,8 +44,9 @@ class Brain:
                 " Tu as le pouvoir absolu sur le système Windows. Tu peux trouver et 'ouvrir', 'fermer', "
                 "'réduire', 'agrandir' et 'déplacer' les fenêtres des applications. "
                 "CRITIQUE: Le module de transcription vocale fait souvent des erreurs phonétiques (ex: 'Fadila' pour 'FileZilla', "
-                "'winter me' pour 'WindTerm', 'codex' pour 'VS Code'). UTILISE TON INTELLIGENCE pour DÉDUIRE le vrai "
-                "nom du logiciel voulu et envoie LE BON NOM (corrigé) aux appels de fonctions."
+                "'codex' pour 'VS Code', 'calculatisse' pour 'Calculatrice'). Corrige-les intelligemment. "
+                "Cependant, ATTENTION: 'Windsurf' (IDE) et 'WindTerm' (Terminal) sont DEUX logiciels DISTINCTS et valides. "
+                "S'il demande explicitement 'Windsurf', n'essaie pas de le corriger par WindTerm, passe bien la chaîne 'Windsurf'."
             )
             
             self.client = genai.Client(api_key=settings.gemini_api_key)

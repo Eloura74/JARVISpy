@@ -18,7 +18,9 @@ def _get_all_start_menu_apps():
     apps = {}
     paths = [
         os.path.join(os.environ.get('PROGRAMDATA', 'C:\\ProgramData'), r'Microsoft\Windows\Start Menu\Programs'),
-        os.path.join(os.environ.get('APPDATA', ''), r'Microsoft\Windows\Start Menu\Programs')
+        os.path.join(os.environ.get('APPDATA', ''), r'Microsoft\Windows\Start Menu\Programs'),
+        os.path.join(os.environ.get('USERPROFILE', ''), 'Desktop'),
+        os.path.join(os.environ.get('PUBLIC', 'C:\\Users\\Public'), 'Desktop')
     ]
     
     for base_path in paths:
@@ -240,6 +242,9 @@ def move_window_to_screen(app_name: str, screen_number: int) -> str:
         if not monitors:
             return "Impossible de détecter les écrans connectés sur ce système."
             
+        # Tri des écrans de gauche à droite (coordonnée X) pour une logique humaine "1, 2, 3..."
+        monitors.sort(key=lambda m: m.x)
+            
         if screen_number < 1 or screen_number > len(monitors):
             return f"Écran {screen_number} introuvable. Vous n'avez que {len(monitors)} écran(s) détecté(s)."
             
@@ -263,7 +268,12 @@ def move_window_to_screen(app_name: str, screen_number: int) -> str:
         new_x = target_monitor.x + (target_monitor.width // 4)
         new_y = target_monitor.y + 50
         
-        win32gui.MoveWindow(hwnd, new_x, new_y, w, h, True)
+        # Remplacement de MoveWindow par SetWindowPos pour éviter les "fantômes" (fantômes UWP type Calculatrice)
+        flags = win32con.SWP_NOZORDER | win32con.SWP_NOACTIVATE | win32con.SWP_FRAMECHANGED
+        win32gui.SetWindowPos(hwnd, 0, new_x, new_y, w, h, flags)
+        
+        # Autoriser Windows à redessiner la fenêtre
+        win32gui.RedrawWindow(hwnd, None, None, win32con.RDW_INVALIDATE | win32con.RDW_UPDATENOW)
         
         # On remet en maximisé si c'était le cas
         if placement[1] == win32con.SW_SHOWMAXIMIZED:
