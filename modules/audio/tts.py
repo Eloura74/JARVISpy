@@ -1,7 +1,9 @@
-import pyttsx3
 import asyncio
 import threading
 import queue
+import os
+import edge_tts
+import pygame
 from typing import Dict, Any
 
 from core.logger import get_logger
@@ -12,29 +14,28 @@ logger = get_logger("audio.tts")
 class TextToSpeech:
     """
     Module vocal de JARVIS. Prononce à voix haute les réponses générées.
-    Utilise un thread dédié en boucle infinie (Worker) pour pyttsx3, 
-    car SAPI5 (Windows API) deteste être appelé depuis plusieurs threads.
+    Utilise Edge-TTS pour une voix neuronale naturelle et Pygame pour l'audio.
     """
     def __init__(self):
         self.queue = queue.Queue()
         self.loop = None
         self._worker_thread = threading.Thread(target=self._tts_worker, daemon=True)
+        # Voix Microsoft Azure gratuite (Denise est très naturelle)
+        self.voice = "fr-FR-DeniseNeural" 
+        
+        # Initialisation de pygame mixer pour jouer l'audio
+        try:
+            pygame.mixer.init()
+        except Exception as e:
+            logger.error(f"Erreur initialisation pygame.mixer: {e}")
 
     def _tts_worker(self):
-        """Thread travailleur dédié unique pour pyttsx3. Évite les freezes (run loop already started)"""
-        # Il est CRITIQUE d'initialiser pyttsx3 explicitement DANS le thread qui l'utilise.
-        try:
-            # On force le driver 'sapi5' qui est le natif Windows pour éviter les bugs silents
-            engine = pyttsx3.init('sapi5')
-            voices = engine.getProperty('voices')
-            french_voice = next((v for v in voices if 'fr' in v.languages or 'French' in v.name), None)
-            if french_voice:
-                engine.setProperty('voice', french_voice.id)
-            engine.setProperty('rate', 160)
-            logger.info("Moteur TTS initialisé dans son worker thread.")
-        except Exception as e:
-            logger.error(f"Erreur initialisation TTS: {e}")
-            return
+        """Thread travailleur dédié pour gérer la génération et la lecture audio, un par un."""
+        logger.info("Moteur Edge-TTS initialisé dans son worker thread.")
+        
+        # Préparation du dossier temporaire
+        os.makedirs(".gemini", exist_ok=True)
+        temp_file = ".gemini/temp_speech.mp3"
 
         while True:
             text = self.queue.get()
@@ -49,25 +50,32 @@ class TextToSpeech:
                         lambda: asyncio.create_task(bus.emit("audio.tts_started", {}))
                     )
                     
-                logger.debug("Début lecture TTS")
+                logger.debug("Génération audio Edge-TTS...")
                 
-                # Le runAndWait est ce qui joue réellement le son sous SAPI5
-                engine.say(text)
-                engine.runAndWait()
-                # On attend une demi seconde après la parole pour laisser l'audio se finir
-                import time
-                time.sleep(0.5)
+                # Fonction asynchrone isolée pour appeler Edge-TTS depuis ce thread
+                async def generate_speech():
+                    communicate = edge_tts.Communicate(text, self.voice)
+                    await communicate.save(temp_file)
+                    
+                asyncio.run(generate_speech())
+                
+                logger.debug("Début lecture TTS (Pygame)")
+                
+                # Lecture via Pygame
+                pygame.mixer.music.load(temp_file)
+                pygame.mixer.music.play()
+                
+                # Attente active (bloque le worker tant que la phrase n'est pas finie)
+                while pygame.mixer.music.get_busy():
+                    pygame.time.Clock().tick(10)
+                    
+                # Libération du fichier pour pouvoir l'écraser à la prochaine phrase
+                pygame.mixer.music.unload()
                 
                 logger.debug("Fin lecture TTS")
                 
             except Exception as e:
                 logger.error(f"Erreur pendant la lecture TTS: {e}")
-                # Réinitialisation de secours si le moteur crash
-                try:
-                    engine = pyttsx3.init('sapi5')
-                    engine.setProperty('rate', 160)
-                except:
-                    pass
             finally:
                 main_loop = getattr(bus, 'main_loop', None)
                 # Notification de fin de parole (pour réactiver le micro STT)

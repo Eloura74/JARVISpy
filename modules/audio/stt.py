@@ -2,6 +2,8 @@ import speech_recognition as sr
 import asyncio
 import threading
 import time
+import numpy as np
+from faster_whisper import WhisperModel
 from typing import Dict, Any
 
 from core.logger import get_logger
@@ -11,7 +13,7 @@ logger = get_logger("audio.stt")
 
 class SpeechToText:
     """
-    Module d'écoute de JARVIS. Utilise le micro système pour capter la voix.
+    Module d'écoute de JARVIS. Utilise le micro système pour capter la voix et Faster-Whisper pour STT.
     """
     def __init__(self):
         self.recognizer = sr.Recognizer()
@@ -20,10 +22,16 @@ class SpeechToText:
         self.stop_listening_fn = None
         self.is_suspended = False  # True quand TTS parle
         
-        # Ajustements pour la reconnaissance
+        # Ajustements pour la reconnaissance (VAD)
         self.recognizer.dynamic_energy_threshold = True
         self.recognizer.energy_threshold = 400
         self.recognizer.pause_threshold = 0.8
+        
+        # Initialisation de Faster-Whisper
+        # FIX: On force le CPU pour éviter l'erreur "cublas64_12.dll introuvable" si CUDA n'est pas installé
+        logger.info("Chargement du modèle Whisper (small) en mémoire sur CPU...")
+        self.model = WhisperModel("small", device="cpu", compute_type="int8")
+        logger.info("Modèle Whisper chargé et prêt.")
 
     def _setup_mic(self):
         try:
@@ -42,9 +50,18 @@ class SpeechToText:
             return
             
         try:
-            logger.debug("Traitement audio en cours...")
-            # On utilise Google Web Speech API pour le STT gratuit (pas besoin de clé)
-            text = recognizer.recognize_google(audio, language="fr-FR")
+            logger.debug("Traitement audio Whisper en cours...")
+            # Convertir l'audio capté en numpy array 16kHz float32 pour Whisper
+            audio_data = np.frombuffer(audio.get_raw_data(convert_rate=16000, convert_width=2), np.int16).flatten().astype(np.float32) / 32768.0
+            
+            # Transcription via Faster-Whisper
+            segments, info = self.model.transcribe(audio_data, beam_size=5, language="fr", condition_on_previous_text=False)
+            
+            text = "".join([segment.text for segment in segments]).strip()
+            
+            if not text:
+                return
+                
             logger.info(f"Reconnu : '{text}'")
             
             # On émet l'événement vers la boucle asyncio principale
@@ -57,10 +74,6 @@ class SpeechToText:
             else:
                 logger.error("STT ne trouve pas la boucle asyncio principale (bus.main_loop)")
                 
-        except sr.UnknownValueError:
-            logger.debug("Audio non compris.")
-        except sr.RequestError as e:
-            logger.error(f"Erreur service STT: {e}")
         except Exception as e:
             logger.error(f"Erreur STT inattendue: {e}")
 
