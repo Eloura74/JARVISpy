@@ -23,6 +23,9 @@ class Settings(BaseSettings):
     ha_url: str = ""
     ha_token: str = ""
     moonraker_url: str = ""
+    bambu_ip: str = ""
+    bambu_serial: str = ""
+    bambu_access_code: str = ""
     
     # Base de données
     db_path: str = "data/jarvis.db"
