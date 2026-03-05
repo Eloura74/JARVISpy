@@ -1,41 +1,43 @@
 import asyncio
 import threading
 import queue
-import os
-import edge_tts
-import pygame
+import sounddevice as sd
+from kokoro_onnx import Kokoro
+from typing import Dict, Any
 from typing import Dict, Any
 
 from core.logger import get_logger
 from core.event_bus import bus
+from core.config import settings
 
 logger = get_logger("audio.tts")
 
 class TextToSpeech:
     """
     Module vocal de JARVIS. Prononce à voix haute les réponses générées.
-    Utilise Edge-TTS pour une voix neuronale naturelle et Pygame pour l'audio.
+    Utilise Kokoro-ONNX pour une voix neuronale extrêmement réaliste et 100% locale.
     """
     def __init__(self):
         self.queue = queue.Queue()
         self.loop = None
         self._worker_thread = threading.Thread(target=self._tts_worker, daemon=True)
-        # Voix Microsoft Azure gratuite (Denise est très naturelle)
-        self.voice = "fr-FR-DeniseNeural" 
+        # Voix chargée depuis la configuration
+        self.voice = settings.kokoro_voice
         
-        # Initialisation de pygame mixer pour jouer l'audio
+        # Initialisation du modèle Kokoro ONNX
         try:
-            pygame.mixer.init()
+            model_path = "models/kokoro/kokoro-v1.0.onnx"
+            voices_path = "models/kokoro/voices-v1.0.bin"
+            logger.info("Chargement du modèle vocal Kokoro en mémoire...")
+            self.kokoro = Kokoro(model_path, voices_path)
+            logger.info("Modèle Kokoro chargé avec succès.")
         except Exception as e:
-            logger.error(f"Erreur initialisation pygame.mixer: {e}")
+            logger.error(f"Erreur initialisation Kokoro TTS: {e}")
+            self.kokoro = None
 
     def _tts_worker(self):
         """Thread travailleur dédié pour gérer la génération et la lecture audio, un par un."""
-        logger.info("Moteur Edge-TTS initialisé dans son worker thread.")
-        
-        # Préparation du dossier temporaire
-        os.makedirs(".gemini", exist_ok=True)
-        temp_file = ".gemini/temp_speech.mp3"
+        logger.info("Moteur Kokoro TTS prêt dans son worker thread.")
 
         while True:
             text = self.queue.get()
@@ -50,29 +52,24 @@ class TextToSpeech:
                         lambda: asyncio.create_task(bus.emit("audio.tts_started", {}))
                     )
                     
-                logger.debug("Génération audio Edge-TTS...")
-                
-                # Fonction asynchrone isolée pour appeler Edge-TTS depuis ce thread
-                async def generate_speech():
-                    communicate = edge_tts.Communicate(text, self.voice)
-                    await communicate.save(temp_file)
+                if self.kokoro:
+                    logger.debug("Génération audio Kokoro en cours...")
                     
-                asyncio.run(generate_speech())
-                
-                logger.debug("Début lecture TTS (Pygame)")
-                
-                # Lecture via Pygame
-                pygame.mixer.music.load(temp_file)
-                pygame.mixer.music.play()
-                
-                # Attente active (bloque le worker tant que la phrase n'est pas finie)
-                while pygame.mixer.music.get_busy():
-                    pygame.time.Clock().tick(10)
+                    # Kokoro supporte la génération directe de l'audio en mémoire (array Numpy)
+                    # "fr-fr" pour le français.
+                    samples, sample_rate = self.kokoro.create(
+                        text, voice=self.voice, speed=1.0, lang="fr-fr"
+                    )
                     
-                # Libération du fichier pour pouvoir l'écraser à la prochaine phrase
-                pygame.mixer.music.unload()
-                
-                logger.debug("Fin lecture TTS")
+                    logger.debug("Début lecture TTS (Sounddevice)")
+                    
+                    # Lecture instantanée et attente
+                    sd.play(samples, sample_rate)
+                    sd.wait()
+                    
+                    logger.debug("Fin lecture TTS")
+                else:
+                    logger.error("Le modèle Kokoro n'est pas initialisé.")
                 
             except Exception as e:
                 logger.error(f"Erreur pendant la lecture TTS: {e}")

@@ -5,6 +5,7 @@ from typing import List, Dict, Any
 from core.config import settings
 from core.logger import get_logger
 from core.event_bus import bus
+from modules.memory.manager import memory, remember_info, forget_info
 
 logger = get_logger("brain.gemini")
 
@@ -19,7 +20,12 @@ class Brain:
             "Tu es formel, professionnel, très respectueux et tu as un léger flegme britannique (un très léger sarcasme amical autorisé). "
             "Tu vouvoies toujours l'utilisateur et l'appelles 'Monsieur'. "
             "RÈGLE ABSOLUE: Tes réponses doivent être EXTRÊMEMENT COURTES (1 à 2 phrases maximum) pour économiser la bande passante et les tokens. "
-            "Va droit au but. N'esquisse jamais de longues listes ou d'explications superflues sauf si le mot 'détaille' est prononcé."
+            "Va droit au but. N'esquisse jamais de longues listes ou d'explications superflues sauf si le mot 'détaille' est prononcé.\n"
+            "Tu possèdes une mémoire SQLite à long terme. Si l'utilisateur te donne une nouvelle information personnelle "
+            "importante (nom, préférence, ville, fait à retenir) ou te demande de retenir quelque chose, "
+            "utilise l'outil `remember_info`. Pour corriger/oublier, utilise `forget_info`.\n"
+            "Voici ce que tu sais actuellement de l'utilisateur et du contexte (FAITS MÉMORISÉS) :\n"
+            "{facts_context}"
         )
         self.client = None
         self.chat_session = None
@@ -38,6 +44,15 @@ class Brain:
                 list_directory, read_file, write_to_file, open_file_or_url
             )
             from modules.system.web import interactive_web_search, close_web_results
+            from modules.system.monitor import get_system_health_report, get_heavy_processes
+            from modules.services.calendar import calendar_service
+            from modules.services.vision import vision_service
+            from modules.services.gmail import gmail_service
+            from modules.services.homeassistant import ha_service
+            from modules.services.moonraker import (
+                get_printer_status, get_print_progress,
+                pause_print, resume_print, cancel_print, emergency_stop
+            )
             
             # Mise à jour des instructions pour indiquer qu'il maîtrise les fenêtres et la correction STT
             self.system_instruction += (
@@ -49,19 +64,43 @@ class Brain:
                 "S'il demande explicitement 'Windsurf', n'essaie pas de le corriger par WindTerm, passe bien la chaîne 'Windsurf'."
             )
             
+            # Récupération dynamique des faits pour le prompt système
+            all_facts = memory.get_all_facts()
+            facts_text = "\n".join([f"- {k}: {v}" for k, v in all_facts.items()]) if all_facts else "(Aucun fait mémorisé)"
+            final_sys_instruction = self.system_instruction.replace("{facts_context}", facts_text)
+            
             self.client = genai.Client(api_key=settings.gemini_api_key)
+            
+            # Récupération de l'historique SQLite
+            history_rows = memory.get_recent_history(limit=10)
+            gemini_history = []
+            for msg in history_rows:
+                # Gemini attend 'user' ou 'model' pour google.genai API -> types.Content
+                role = "model" if msg["role"] == "assistant" else "user"
+                gemini_history.append(
+                    types.Content(role=role, parts=[types.Part.from_text(text=msg["content"])])
+                )
             
             # Démarrage d'une session de chat pour conserver l'historique
             self.chat_session = self.client.chats.create(
                 model=self.model_name,
+                history=gemini_history,
                 config=types.GenerateContentConfig(
-                    system_instruction=self.system_instruction,
+                    system_instruction=final_sys_instruction,
                     temperature=0.7,
                     tools=[
                         find_and_launch_app, close_application, manage_window_state, move_window_to_screen,
                         get_system_time, get_battery_status,
                         list_directory, read_file, write_to_file,
-                        open_file_or_url, interactive_web_search, close_web_results
+                        open_file_or_url, interactive_web_search, close_web_results,
+                        remember_info, forget_info,
+                        get_system_health_report, get_heavy_processes,
+                        calendar_service.get_upcoming_events, calendar_service.create_event,
+                        vision_service.analyze_surroundings,
+                        gmail_service.get_unread_emails_summary, gmail_service.mark_email_as_read,
+                        ha_service.get_entity_state, ha_service.call_service, ha_service.list_entities,
+                        get_printer_status, get_print_progress,
+                        pause_print, resume_print, cancel_print, emergency_stop
                     ] # Injection des capacités système complètes
                 )
             )
@@ -108,6 +147,14 @@ class Brain:
             list_directory, read_file, write_to_file, open_file_or_url
         )
         from modules.system.web import interactive_web_search, close_web_results
+        from modules.services.calendar import calendar_service
+        from modules.services.vision import vision_service
+        from modules.services.gmail import gmail_service
+        from modules.services.homeassistant import ha_service
+        from modules.services.moonraker import (
+            get_printer_status, get_print_progress,
+            pause_print, resume_print, cancel_print, emergency_stop
+        )
         
         # Dictionnaire manuel des outils disponibles (pour le mapping)
         tools_map = {
@@ -122,19 +169,38 @@ class Brain:
             "write_to_file": write_to_file,
             "open_file_or_url": open_file_or_url,
             "interactive_web_search": interactive_web_search,
-            "close_web_results": close_web_results
+            "close_web_results": close_web_results,
+            "get_upcoming_events": calendar_service.get_upcoming_events,
+            "create_event": calendar_service.create_event,
+            "analyze_surroundings": vision_service.analyze_surroundings,
+            "get_unread_emails_summary": gmail_service.get_unread_emails_summary,
+            "mark_email_as_read": gmail_service.mark_email_as_read,
+            "get_entity_state": ha_service.get_entity_state,
+            "call_service": ha_service.call_service,
+            "list_entities": ha_service.list_entities,
+            "get_printer_status": get_printer_status,
+            "get_print_progress": get_print_progress,
+            "pause_print": pause_print,
+            "resume_print": resume_print,
+            "cancel_print": cancel_print,
+            "emergency_stop": emergency_stop,
         }
             
         main_loop = asyncio.get_running_loop()
         bus.main_loop = main_loop # Stocké pour les helpers synchrones (comme web.py)
         
         def blocking_call():
-            # Google-genai exécute AUTOMATIQUEMENT les fonctions dans ce thread
+            # Google-genai exécute AUTOMATIQUEMENT les fonctions dans ce thread via Automatic Function Calling
             response = self.chat_session.send_message(text)
             
             # S'il y a toujours des fonctions en attente (normalement non car le SDK gère l'aller-retour complet)
             if response.function_calls:
                  logger.warning("Des appels de fonctions n'ont pas été gérés automatiquement par le SDK.")
+                 
+            # 3. Sauvegarder l'interaction dans Memory (SQLite)
+            # Puisque tout s'est bien passé, on archive
+            memory.store_message(role="user", content=text)
+            memory.store_message(role="assistant", content=response.text)
                         
             return response.text
             
@@ -144,6 +210,7 @@ class Brain:
         """Abonne le module aux événements nécessaires"""
         bus.subscribe("audio.speech_recognized", self._handle_user_input)
         bus.subscribe("ui.text_input", self._handle_user_input)
+        bus.subscribe("ws.ui.text_input", self._handle_user_input) # Ajout du relai WS depuis /api/server.py
         logger.info("Module Brain actif et à l'écoute.")
 
 # Instance globale du Cerveau

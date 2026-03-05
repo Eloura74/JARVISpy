@@ -9,6 +9,7 @@ import uvicorn
 from core.config import settings
 from core.logger import get_logger
 from core.event_bus import bus
+from api.routes.settings import router as settings_router
 
 logger = get_logger("api.server")
 
@@ -17,6 +18,9 @@ app = FastAPI(
     description="API centrale de l'assistant personnel JarvisDecoupe",
     version="0.1.0",
 )
+
+# Inclusion du routeur pour les paramètres
+app.include_router(settings_router)
 
 # Configuration CORS pour permettre aux interfaces web de se connecter
 app.add_middleware(

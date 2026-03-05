@@ -24,6 +24,9 @@
         <div class="status-bar">
           <div class="status-indicator offline" id="connection-status"></div>
           <span id="connection-text">Hors ligne</span>
+          <button id="settings-btn" class="icon-btn" title="Paramètres">
+            ⚙️
+          </button>
         </div>
       </header>
 
@@ -77,6 +80,17 @@
             <div class="transcript-box" id="transcript-box">
               <!-- Dialogue Utilisateur/JARVIS -->
             </div>
+            <div class="chat-input-container">
+              <input
+                type="text"
+                id="chat-input"
+                placeholder="Envoyer un message à JARVIS..."
+                autocomplete="off"
+              />
+              <button id="chat-send-btn" class="icon-btn" title="Envoyer">
+                ➤
+              </button>
+            </div>
           </div>
         </div>
       </main>
@@ -85,6 +99,213 @@
       <div id="widgets-container" class="widgets-container hidden">
         <!-- Injected via JS -->
       </div>
+
+      <!-- SETTINGS MODAL -->
+      <dialog id="settings-modal" class="glass-modal">
+        <div
+          class="modal-content glass-panel"
+          style="width: 500px; max-width: 95%"
+        >
+          <div class="modal-header">
+            <h2>Paramètres</h2>
+            <div class="tabs">
+              <button class="tab-btn active" data-tab="general">Général</button>
+              <button class="tab-btn" data-tab="modules">Modules</button>
+              <button class="tab-btn" data-tab="memory">Mémoire</button>
+            </div>
+          </div>
+
+          <div class="tab-content active" id="tab-general">
+            <form id="settings-form">
+              <div class="form-group">
+                <label for="gemini-key">Clé API Gemini :</label>
+                <input
+                  type="password"
+                  id="gemini-key"
+                  placeholder="AIzaSy..."
+                />
+              </div>
+              <div class="form-group">
+                <label for="tavily-key">Clé API Tavily :</label>
+                <input type="password" id="tavily-key" placeholder="tvly-..." />
+              </div>
+              <div class="form-group" style="margin-top: 10px">
+                <label for="tts-voice">Voix de Synthèse (Kokoro) :</label>
+                <select id="tts-voice" class="custom-select">
+                  <option value="">Chargement...</option>
+                </select>
+              </div>
+              <div class="form-actions">
+                <button type="button" class="btn secondary close-settings-btn">
+                  Annuler
+                </button>
+                <button type="submit" class="btn primary">Sauvegarder</button>
+              </div>
+            </form>
+          </div>
+
+          <!-- TAB MODULES -->
+          <div class="tab-content" id="tab-modules">
+            <div
+              class="form-group"
+              style="
+                padding: 10px;
+                background: rgba(0, 0, 0, 0.2);
+                border-radius: 5px;
+                margin-bottom: 10px;
+              "
+            >
+              <h3 style="color: var(--primary-color)">👁️ Vision (OpenCV)</h3>
+              <label
+                style="
+                  display: flex;
+                  align-items: center;
+                  gap: 10px;
+                  margin-top: 5px;
+                "
+              >
+                <input type="checkbox" id="vision-enabled" /> Activer la Caméra
+              </label>
+              <label
+                style="
+                  display: flex;
+                  align-items: center;
+                  gap: 10px;
+                  margin-top: 5px;
+                "
+              >
+                Index Caméra:
+                <input
+                  type="number"
+                  id="camera-index"
+                  min="0"
+                  max="10"
+                  style="width: 60px"
+                />
+              </label>
+
+              <div style="margin-top: 10px">
+                <button
+                  type="button"
+                  class="btn secondary"
+                  id="test-camera-btn"
+                  style="font-size: 0.8rem; padding: 5px 10px"
+                >
+                  📸 Tester Caméra (Snapshot)
+                </button>
+                <img
+                  id="camera-preview"
+                  src=""
+                  style="
+                    display: none;
+                    margin-top: 10px;
+                    max-width: 100%;
+                    border-radius: 5px;
+                    border: 1px solid var(--primary-color);
+                  "
+                />
+              </div>
+            </div>
+
+            <div
+              class="form-group"
+              style="
+                padding: 10px;
+                background: rgba(0, 0, 0, 0.2);
+                border-radius: 5px;
+                margin-bottom: 10px;
+              "
+            >
+              <h3 style="color: var(--primary-color)">✉️ Google Mail</h3>
+              <label
+                style="
+                  display: flex;
+                  align-items: center;
+                  gap: 10px;
+                  margin-top: 5px;
+                "
+              >
+                <input type="checkbox" id="gmail-enabled" /> Activer lecture des
+                Emails (OAuth)
+              </label>
+            </div>
+
+            <div
+              class="form-group"
+              style="
+                padding: 10px;
+                background: rgba(0, 0, 0, 0.2);
+                border-radius: 5px;
+                margin-bottom: 10px;
+              "
+            >
+              <h3 style="color: var(--primary-color)">🏠 Home Assistant</h3>
+              <label style="margin-top: 5px"
+                >URL (ex: http://192.168.1.100:8123)</label
+              >
+              <input type="text" id="ha-url" placeholder="http://..." />
+              <label style="margin-top: 5px"
+                >Token d'accès longue durée (LLAT)</label
+              >
+              <input type="password" id="ha-token" placeholder="eyJhbG..." />
+            </div>
+
+            <div
+              class="form-group"
+              style="
+                padding: 10px;
+                background: rgba(0, 0, 0, 0.2);
+                border-radius: 5px;
+                margin-bottom: 10px;
+              "
+            >
+              <h3 style="color: var(--primary-color)">
+                🖨️ Klipper / Moonraker
+              </h3>
+              <label style="margin-top: 5px"
+                >URL Moonraker (ex: http://192.168.1.50)</label
+              >
+              <input type="text" id="moonraker-url" placeholder="http://" />
+            </div>
+
+            <div class="form-actions">
+              <button type="button" class="btn secondary close-settings-btn">
+                Fermer
+              </button>
+              <button type="button" class="btn primary" id="save-modules-btn">
+                Sauvegarder Tout
+              </button>
+            </div>
+          </div>
+
+          <div class="tab-content" id="tab-memory">
+            <div class="memory-container">
+              <table class="memory-table">
+                <thead>
+                  <tr>
+                    <th>Clé</th>
+                    <th>Valeur</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody id="memory-tbody">
+                  <!-- Injected via JS -->
+                  <tr>
+                    <td colspan="3" style="text-align: center">
+                      Chargement de la mémoire...
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="form-actions">
+              <button type="button" class="btn secondary close-settings-btn">
+                Fermer
+              </button>
+            </div>
+          </div>
+        </div>
+      </dialog>
     </div>
 
     <script src="/static/app.js"></script>

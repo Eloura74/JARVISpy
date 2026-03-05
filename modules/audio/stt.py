@@ -33,13 +33,16 @@ class SpeechToText:
         self.model = WhisperModel("small", device="cpu", compute_type="int8")
         logger.info("Modèle Whisper chargé et prêt.")
 
-    def _setup_mic(self):
+    def _setup_mic(self, recalibrate=True):
         try:
-            self.microphone = sr.Microphone()
-            with self.microphone as source:
-                logger.debug("Ajustement du bruit ambiant...")
-                self.recognizer.adjust_for_ambient_noise(source, duration=1)
-            logger.info("Microphone configuré avec succès.")
+            if not self.microphone:
+                self.microphone = sr.Microphone()
+                
+            if recalibrate:
+                with self.microphone as source:
+                    logger.debug("Ajustement du bruit ambiant...")
+                    self.recognizer.adjust_for_ambient_noise(source, duration=1)
+                logger.info("Microphone configuré avec succès.")
         except Exception as e:
             logger.error(f"Impossible d'accéder au microphone: {e}. PyAudio est-il bien installé ?")
 
@@ -77,16 +80,17 @@ class SpeechToText:
         except Exception as e:
             logger.error(f"Erreur STT inattendue: {e}")
 
-    def start(self):
+    def start(self, recalibrate=True):
         """Lance l'écoute permanente du micro en arrière-plan"""
         if self.is_listening:
             return
             
-        self._setup_mic()
+        self._setup_mic(recalibrate=recalibrate)
         if not self.microphone:
             return
             
-        logger.info("Module STT (Écoute) actif. Parlez !")
+        if recalibrate:
+            logger.info("Module STT (Écoute) actif. Parlez !")
         self.is_listening = True
         
         # Lancement de l'écoute asynchrone native de speech_recognition
@@ -97,19 +101,22 @@ class SpeechToText:
             phrase_time_limit=10 # Coupe si on parle plus de 10s non-stop
         )
 
-    def stop(self):
+    def stop(self, is_temporary=False):
         """Arrête l'écoute du micro"""
         if self.is_listening and self.stop_listening_fn:
             self.stop_listening_fn(wait_for_stop=False)
             self.is_listening = False
-            logger.info("Module STT arrêté.")
+            if not is_temporary:
+                logger.info("Module STT arrêté.")
             
     async def _on_tts_start(self, payload: Dict[str, Any]):
         self.is_suspended = True
+        self.stop(is_temporary=True) # Coupe PHYSIQUEMENT l'écoute pour éviter de s'entendre
         
     async def _on_tts_stop(self, payload: Dict[str, Any]):
-        # On attend une demi-seconde de plus pour éviter l'écho résiduel de la pièce
-        await asyncio.sleep(0.5)
+        # On attend une fraction de seconde de plus pour l'écho résiduel de la pièce
+        await asyncio.sleep(0.3)
+        self.start(recalibrate=False) # Relance PHYSIQUEMENT l'écoute
         self.is_suspended = False
 
 # Instance globale

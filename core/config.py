@@ -14,6 +14,18 @@ class Settings(BaseSettings):
     
     gemini_api_key: str = ""
     tavily_api_key: str = ""
+    kokoro_voice: str = "ff_siwis"
+    
+    # Nouvelles Intégrations
+    vision_enabled: str = "false"
+    camera_index: str = "0"
+    gmail_enabled: str = "false"
+    ha_url: str = ""
+    ha_token: str = ""
+    moonraker_url: str = ""
+    
+    # Base de données
+    db_path: str = "data/jarvis.db"
     
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")
 

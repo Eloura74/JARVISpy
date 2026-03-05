@@ -361,6 +361,41 @@ h2 {
   border-bottom-left-radius: 2px;
 }
 
+.chat-input-container {
+  display: flex;
+  gap: 10px;
+  margin-top: 15px;
+  background: rgba(0, 0, 0, 0.3);
+  padding: 10px;
+  border-radius: 8px;
+  border: 1px solid var(--panel-border);
+}
+
+.chat-input-container input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  color: var(--text-main);
+  font-family: var(--font-body);
+  font-size: 1.1rem;
+  outline: none;
+}
+
+.chat-input-container input::placeholder {
+  color: var(--text-dim);
+  opacity: 0.7;
+}
+
+#chat-send-btn {
+  color: var(--primary-color);
+  font-size: 1.4rem;
+  padding: 0 10px;
+}
+
+#chat-send-btn:hover {
+  text-shadow: 0 0 10px var(--primary-glow);
+}
+
 /* WIDGETS CONTAINER (Hidden for now) */
 .widgets-container {
   position: absolute;
@@ -523,4 +558,215 @@ h2 {
     opacity: 1;
     transform: translateY(0);
   }
+}
+
+/* SETTINGS MODAL */
+.glass-modal {
+  border: none;
+  background: transparent;
+  width: 100vw;
+  height: 100vh;
+  position: fixed;
+  top: 0;
+  left: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+.glass-modal::backdrop {
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(5px);
+}
+.glass-modal:not([open]) {
+  display: none;
+}
+.modal-content {
+  width: 400px;
+  max-width: 90%;
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  /* Annuler le margin auto imposé par 'dialog' par defaut dans certains navigateurs */
+  margin: auto;
+}
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+.form-group label {
+  color: var(--text-dim);
+  font-size: 0.9rem;
+}
+.form-group input {
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid var(--panel-border);
+  color: var(--text-main);
+  padding: 10px;
+  border-radius: 5px;
+  font-family: monospace;
+}
+.form-group input:focus {
+  outline: none;
+  border-color: var(--primary-color);
+  box-shadow: 0 0 5px var(--primary-glow);
+}
+.form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 15px;
+}
+.btn {
+  padding: 8px 15px;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  font-weight: bold;
+  transition: all 0.2s;
+  font-family: var(--font-body);
+  font-size: 1rem;
+}
+.btn.primary {
+  background: rgba(0, 210, 255, 0.2);
+  border: 1px solid var(--primary-color);
+  color: var(--primary-color);
+}
+.btn.primary:hover {
+  background: var(--primary-color);
+  color: var(--bg-color);
+}
+.btn.secondary {
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--text-dim);
+}
+.btn.secondary:hover {
+  background: rgba(255, 255, 255, 0.2);
+  color: #fff;
+}
+.icon-btn {
+  background: transparent;
+  border: none;
+  font-size: 1.2rem;
+  cursor: pointer;
+  opacity: 0.7;
+  transition: opacity 0.2s;
+}
+.icon-btn:hover {
+  opacity: 1;
+}
+
+/* TABS & ADVANCED SETTINGS */
+.modal-header {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  border-bottom: 1px solid var(--panel-border);
+  padding-bottom: 10px;
+  margin-bottom: 10px;
+}
+.modal-header h2 {
+  margin-bottom: 0;
+  border-bottom: none;
+}
+.tabs {
+  display: flex;
+  gap: 10px;
+}
+.tab-btn {
+  background: transparent;
+  color: var(--text-dim);
+  border: 1px solid transparent;
+  padding: 8px 15px;
+  border-radius: 5px;
+  cursor: pointer;
+  font-family: var(--font-body);
+  font-size: 1rem;
+  transition: all 0.2s;
+}
+.tab-btn:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+.tab-btn.active {
+  color: var(--primary-color);
+  background: rgba(0, 150, 255, 0.1);
+  border-color: var(--primary-color);
+}
+.tab-content {
+  display: none;
+}
+.tab-content.active {
+  display: block;
+  animation: slide-up 0.3s ease-out;
+}
+
+.custom-select {
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid var(--panel-border);
+  color: var(--text-main);
+  padding: 10px;
+  border-radius: 5px;
+  font-family: var(--font-body);
+  font-size: 1rem;
+  appearance: none; /* remove default arrow to style it maybe later, for now we keep it simple */
+  cursor: pointer;
+}
+.custom-select:focus {
+  outline: none;
+  border-color: var(--primary-color);
+  box-shadow: 0 0 5px var(--primary-glow);
+}
+.custom-select option {
+  background: var(--bg-color);
+  color: var(--text-main);
+}
+
+/* MEMORY TABLE */
+.memory-container {
+  max-height: 250px;
+  overflow-y: auto;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 5px;
+  background: rgba(0, 0, 0, 0.2);
+}
+.memory-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+.memory-table th,
+.memory-table td {
+  padding: 10px;
+  text-align: left;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  font-size: 0.95rem;
+}
+.memory-table th {
+  color: var(--primary-color);
+  position: sticky;
+  top: 0;
+  background: rgba(5, 10, 25, 0.9);
+  z-index: 10;
+}
+.memory-table td {
+  color: var(--text-dim);
+}
+.memory-table tr:hover td {
+  background: rgba(255, 255, 255, 0.02);
+}
+.memory-table td:first-child {
+  font-weight: bold;
+  color: var(--text-main);
+}
+.delete-btn {
+  background: transparent;
+  color: var(--accent-red);
+  border: none;
+  cursor: pointer;
+  opacity: 0.6;
+  transition: opacity 0.2s;
+  font-size: 1.1rem;
+}
+.delete-btn:hover {
+  opacity: 1;
 }
