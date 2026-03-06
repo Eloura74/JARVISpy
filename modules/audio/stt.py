@@ -24,15 +24,15 @@ class SpeechToText:
         
         # Paramètres de détection de parole
         self.recognizer.dynamic_energy_threshold = True
-        self.recognizer.energy_threshold = 550      # Plus haut = ignore les sons faibles lointains
+        self.recognizer.energy_threshold = 700      # 700 = ignore sons faibles/lointains (enceintes à 80cm)
         self.recognizer.pause_threshold = 0.8
-        self.recognizer.non_speaking_duration = 0.6 # Réduire les déclenchements sur le silence
+        self.recognizer.non_speaking_duration = 0.6
 
         # WebRTC VAD — filtre pré-Whisper ultra-rapide (~1ms)
         # pip install webrtcvad-wheels (wheels pré-compilés, fonctionne sur Windows sans Build Tools)
         try:
             import webrtcvad
-            self._vad = webrtcvad.Vad(2)  # mode 0-3, 2 = équilibré
+            self._vad = webrtcvad.Vad(3)  # mode 3 = plus strict (exige spectres vocaux nets)
             self._vad_enabled = True
             logger.info("WebRTC VAD activé (filtre pré-Whisper, mode 2).")
         except ImportError:
@@ -145,7 +145,13 @@ class SpeechToText:
                 logger.debug(f"Hallucination Whisper ignorée: '{text}'")
                 return
                 
-            # Détection d'erreurs de répétition infinie de Whisper (bégaiement)
+            # Filtre fragments (son lointain ) : ellipses répétées = audio flou = film
+            ellipsis_count = text.count("...")
+            if ellipsis_count >= 2:
+                logger.debug(f"Fragment ellipsé ignoré (film/bruit?): '{text}'")
+                return
+
+            # Filtre mot court répétitif ("je je je" = hallucination sur audio distant)
             words = text_lower.split()
             if len(words) > 4 and len(set(words)) == 1:
                 logger.debug(f"Bégaiement Whisper ignoré: '{text}'")

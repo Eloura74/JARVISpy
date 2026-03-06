@@ -3,8 +3,10 @@ import { store } from "./services/state.js";
 
 // Components
 import { Status } from "./components/Status/Status.js";
-import { Orb } from "./components/Orb/Orb.js";
+import { JarvisCoreBridge } from "./components/jarvis/JarvisCoreBridge";
+import { audioAnalyzer } from "./services/audioAnalyzer.js";
 import { Terminal } from "./components/Terminal/Terminal.js";
+
 import { Chat } from "./components/Chat/Chat.js";
 import { Settings } from "./components/Settings/Settings.js";
 import { WebSearch } from "./components/WebSearch/WebSearch.js";
@@ -22,7 +24,7 @@ class JarvisApp {
 
     // Instanciation des composants
     this.status = new Status("status-mount");
-    this.orb = new Orb("orb-mount");
+    this.orb = new JarvisCoreBridge("orb-mount");
     this.terminal = new Terminal("terminal-mount");
     this.chat = new Chat("chat-mount");
     this.settings = new Settings("settings-mount");
@@ -35,6 +37,13 @@ class JarvisApp {
 
     // Connexion au serveur
     wsService.connect();
+
+    // Démarrage de l'analyseur audio sur la première interaction (contrainte navigateur)
+    const initAudio = () => {
+      audioAnalyzer.start();
+      window.removeEventListener("click", initAudio);
+    };
+    window.addEventListener("click", initAudio);
 
     this.terminal.addLog(
       "Système opérationnel. Liaison montante établie.",

@@ -17,7 +17,9 @@ class StateStore {
         bambu: null,
         moonraker: null,
       },
+      audioLevel: 0, // 0.0 à 1.0 (RMS)
     };
+
     this.listeners = new Set();
   }
 
