@@ -112,20 +112,34 @@ class SpeechToText:
         """Lance l'écoute permanente du micro en arrière-plan"""
         if self.is_listening:
             return
-            
+
         self._setup_mic(recalibrate=recalibrate)
         if not self.microphone:
             return
-            
+
+        # CRITIQUE: attendre que le thread précédent ait vraiment libéré le stream.
+        # Avec wait=False, le thread signale l'arrêt mais n'a pas encore fermé source.stream.
+        # Si listen_in_background est appelé pendant que stream != None, on obtient:
+        # AssertionError: This audio source is already inside a context manager
+        import time
+        if hasattr(self.microphone, 'stream') and self.microphone.stream is not None:
+            for _ in range(30):  # max 3 secondes (30 * 100ms)
+                time.sleep(0.1)
+                if self.microphone.stream is None:
+                    break
+            else:
+                logger.warning("Stream micro toujours ouvert après 3s — abandon du redémarrage")
+                return
+
         if recalibrate:
             logger.info("Module STT (Écoute) actif. Parlez !")
         self.is_listening = True
-        
+
         # Lancement de l'écoute asynchrone (le thread background est géré par la librairie)
         self.stop_listening_fn = self.recognizer.listen_in_background(
-            self.microphone, 
+            self.microphone,
             self._callback,
-            phrase_time_limit=10 # Coupe si on parle plus de 10s non-stop
+            phrase_time_limit=8  # Coupe si on parle plus de 8s non-stop
         )
 
     def stop(self, is_temporary=False, wait=False):
