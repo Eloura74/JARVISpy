@@ -78,14 +78,23 @@ export const JarvisCore: React.FC<JarvisCoreProps> = ({
     const animate = (t: number) => {
       const time = t * 0.001;
 
+      // Si Jarvis parle, on simule une activité audio harmonique pour maintenir l'animation vivante
+      // même si le backend n'envoie pas de flux RMS réel.
+      let effectiveAudio = smoothedAudio;
+      if (mode === "speaking") {
+        const fakeVoice =
+          0.15 + Math.sin(time * 8) * 0.1 + Math.sin(time * 14) * 0.05;
+        effectiveAudio = Math.max(smoothedAudio, fakeVoice);
+      }
+
       updatePointField(
         haloField,
         time * 0.72,
-        smoothedAudio * 0.65,
+        effectiveAudio * 0.65,
         mode,
         1.05,
       );
-      updatePointField(mainField, time, smoothedAudio, mode, 1);
+      updatePointField(mainField, time, effectiveAudio, mode, 1);
 
       mainField.points.rotation.y = time * 0.18;
       mainField.points.rotation.x = Math.sin(time * 0.35) * 0.12;

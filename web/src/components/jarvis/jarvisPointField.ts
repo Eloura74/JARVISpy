@@ -112,7 +112,15 @@ export function updatePointField(
   scale = 1,
 ) {
   const target = JARVIS_COLORS[mode];
-  const pulse = mode === "speaking" ? 1.2 : mode === "listening" ? 1.0 : 0.55;
+
+  const isSpeaking = mode === "speaking";
+  const isListening = mode === "listening";
+
+  // Jarvis parle : Fluide, majestueux, expansif
+  // Utilisateur parle : Excité, vibrant, haute réactivité
+  const waveFreq = isSpeaking ? 1.4 : isListening ? 5.5 : 1.2;
+  const waveAmp = isSpeaking ? 0.65 : isListening ? 0.35 : 0.08;
+  const pulse = isSpeaking ? 1.8 : isListening ? 1.2 : 0.55;
 
   for (let i = 0; i < field.metaR.length; i++) {
     const i3 = i * 3;
@@ -122,38 +130,52 @@ export function updatePointField(
     const p = field.metaP[i];
     const layer = field.metaL[i];
 
+    // Wave pattern - Pulsation volumétrique
     const wave =
-      Math.sin(time * (1.2 + layer) - r * 3.4 + p) *
-      (0.08 + audioLevel * 0.32 * pulse);
+      Math.sin(
+        time * (waveFreq + layer * 0.4) - r * (isSpeaking ? 1.8 : 5.0) + p,
+      ) *
+      (waveAmp + audioLevel * 0.5 * pulse);
 
+    // Turbulence plus fluide pour Jarvis
+    const swirlSpeed = isSpeaking ? 0.15 : isListening ? 1.2 : 0.45;
     const swirl =
-      Math.sin(time * 0.45 + p) * 0.08 + Math.cos(time * 0.26 + r * 1.3) * 0.04;
+      Math.sin(time * swirlSpeed + p) * 0.15 + Math.cos(time * 0.4 + r) * 0.08;
 
-    const angle = a + time * 0.08 * (0.4 + layer * 0.2) + swirl;
+    const angle = a + time * 0.05 * (0.4 + layer * 0.35) + swirl;
 
-    const radial = r * (1 + wave * 0.16);
+    // Expansion radiale très marquée pour Jarvis (Effet d'éruption lumineuse)
+    const radialBase = isSpeaking ? 1.25 : 1.0;
+    const radialFactor = isSpeaking ? 0.45 : isListening ? 0.25 : 0.15;
+    const radial = r * (radialBase + wave * radialFactor);
+
+    // Lift vertical
+    const liftFreq = isListening ? 6.0 : 2.0;
     const lift =
-      Math.sin(time * 1.8 + r * 2.6 + p) * (0.04 + audioLevel * 0.18);
+      Math.sin(time * liftFreq + r * 4 + p) * (0.06 + audioLevel * 0.3);
 
     field.pos[i3] = Math.cos(angle) * radial * scale;
     field.pos[i3 + 1] =
-      Math.sin(angle) * radial * (0.76 + audioLevel * 0.22) + lift;
+      Math.sin(angle) * radial * (0.85 + audioLevel * 0.4) + lift;
     field.pos[i3 + 2] =
       field.base[i3 + 2] +
-      Math.cos(time * (1.1 + layer) + r * 2.4 + p) * (0.16 + audioLevel * 0.52);
+      Math.cos(time * (1.2 + layer) + r * 2.8 + p) * (0.25 + audioLevel * 0.7);
 
-    const brightness = 0.72 + audioLevel * 0.55 + Math.max(0, wave) * 0.45;
+    // Couleur plus saturée pendant que Jarvis parle
+    const glowBoost = isSpeaking ? 0.6 : 0;
+    const brightness =
+      0.8 + glowBoost + audioLevel * 0.75 + Math.max(0, wave) * 0.5;
     field.color[i3] = target.r * brightness;
     field.color[i3 + 1] = target.g * brightness;
     field.color[i3 + 2] = target.b * brightness;
 
-    field.alpha[i] = Math.min(
-      1,
-      0.22 + audioLevel * 0.55 + Math.abs(wave) * 0.45,
-    );
+    // Opacité et taille
+    field.alpha[i] = Math.min(1, 0.3 + audioLevel * 0.7 + Math.abs(wave) * 0.6);
+
+    const baseSize = isSpeaking ? 7.5 : isListening ? 9 : 5;
     field.size[i] =
-      field.size[i] * 0.985 +
-      (4.5 + layer * 2.0 + audioLevel * 11 + Math.abs(wave) * 6) * 0.015;
+      field.size[i] * 0.96 +
+      (baseSize + layer * 3.0 + audioLevel * 20 + Math.abs(wave) * 10) * 0.04;
   }
 
   field.geometry.attributes.position.needsUpdate = true;

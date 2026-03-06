@@ -22,8 +22,10 @@
 body {
   background-color: var(--bg-color);
   background-image:
-    radial-gradient(circle at 15% 50%, rgba(0, 50, 100, 0.15), transparent 25%),
-    radial-gradient(circle at 85% 30%, rgba(0, 100, 200, 0.1), transparent 25%);
+    radial-gradient(circle, transparent 20%, rgba(0, 0, 0, 0.4) 100%),
+    url("/static/jarvis_bg_deep_minimal.png");
+  background-size: cover;
+  background-position: center;
   color: var(--text-main);
   font-family: var(--font-body);
   height: 100vh;
@@ -31,6 +33,11 @@ body {
   display: flex;
   justify-content: center;
   align-items: center;
+}
+
+/* Masquer la grille hexagonale trop chargée pour privilégier la nouvelle image */
+.orb-hex-grid {
+  display: none;
 }
 
 /* Glassmorphism Container */
