@@ -22,10 +22,23 @@ class SpeechToText:
         self.stop_listening_fn = None
         self.is_suspended = False  # True quand TTS parle
         
-        # Ajustements pour la reconnaissance (VAD)
+        # Paramètres de détection de parole
         self.recognizer.dynamic_energy_threshold = True
-        self.recognizer.energy_threshold = 400
+        self.recognizer.energy_threshold = 550      # Plus haut = ignore les sons faibles lointains
         self.recognizer.pause_threshold = 0.8
+        self.recognizer.non_speaking_duration = 0.6 # Réduire les déclenchements sur le silence
+
+        # WebRTC VAD — filtre pré-Whisper ultra-rapide (~1ms)
+        # pip install webrtcvad-wheels (wheels pré-compilés, fonctionne sur Windows sans Build Tools)
+        try:
+            import webrtcvad
+            self._vad = webrtcvad.Vad(2)  # mode 0-3, 2 = équilibré
+            self._vad_enabled = True
+            logger.info("WebRTC VAD activé (filtre pré-Whisper, mode 2).")
+        except ImportError:
+            self._vad = None
+            self._vad_enabled = False
+            logger.warning("webrtcvad non installé — VAD désactivé. Lancez : pip install webrtcvad-wheels")
         
         # Initialisation de Faster-Whisper
         # FIX: On force le CPU pour éviter l'erreur "cublas64_12.dll introuvable" si CUDA n'est pas installé
@@ -46,16 +59,61 @@ class SpeechToText:
         except Exception as e:
             logger.error(f"Impossible d'accéder au microphone: {e}. PyAudio est-il bien installé ?")
 
+    def _vad_filter(self, raw_bytes: bytes) -> bool:
+        """
+        Pré-filtre WebRTC VAD : retourne True si l'audio contient assez de voix pour mériter Whisper.
+        Travaille sur des frames de 30ms à 16kHz/16-bit.
+        Seuil : 30% des frames doivent être détectées comme "voix".
+        Coût ≈ 1ms — s'exécute dans le thread background du micro.
+        """
+        FRAME_MS   = 30
+        FRAME_SIZE = int(16000 * FRAME_MS / 1000) * 2  # 960 bytes = 480 échantillons * 2 octets
+        THRESHOLD  = 0.30  # ratio minimum de frames "voix"
+
+        voice = total = 0
+        for i in range(0, len(raw_bytes) - FRAME_SIZE, FRAME_SIZE):
+            frame = raw_bytes[i : i + FRAME_SIZE]
+            if len(frame) == FRAME_SIZE:
+                total += 1
+                try:
+                    if self._vad.is_speech(frame, 16000):
+                        voice += 1
+                except Exception:
+                    pass
+
+        if total == 0:
+            return False
+        ratio = voice / total
+        logger.debug(f"VAD: {voice}/{total} frames voix ({ratio:.0%})")
+        return ratio >= THRESHOLD
+
     def _callback(self, recognizer, audio):
-        """Fonction appelée automatiquement dès qu'une phrase est captée (Background thread)"""
+        """Appelée automatiquement dès qu'une phrase est captée (background thread)"""
         if self.is_suspended:
             logger.debug("Audio ignoré (J.A.R.V.I.S parle)")
             return
-            
+
         try:
+            # PCM 16kHz/16-bit — format commun VAD + Whisper
+            raw_bytes = audio.get_raw_data(convert_rate=16000, convert_width=2)
+
+            # ── Filtre 1 : durée minimale ──────────────────────────────────────
+            # < 0.5s = bruit ponctuel (clic, son film court) → skip Whisper
+            duration_s = len(raw_bytes) / (16000 * 2)
+            if duration_s < 0.5:
+                logger.debug(f"Audio trop court ({duration_s:.2f}s) — ignoré")
+                return
+
+            # ── Filtre 2 : WebRTC VAD (pré-Whisper) ───────────────────────────
+            # Filtre les sons lointains (enceintes, film) dont moins de 30% des
+            # frames ressemblent à de la parole humaine proche.
+            if self._vad_enabled and not self._vad_filter(raw_bytes):
+                logger.debug("VAD: ratio voix insuffisant — Whisper ignoré")
+                return
+
             logger.debug("Traitement audio Whisper en cours...")
-            # Convertir l'audio capté en numpy array 16kHz float32 pour Whisper
-            audio_data = np.frombuffer(audio.get_raw_data(convert_rate=16000, convert_width=2), np.int16).flatten().astype(np.float32) / 32768.0
+            # Conversion numpy float32 pour Faster-Whisper
+            audio_data = np.frombuffer(raw_bytes, np.int16).flatten().astype(np.float32) / 32768.0
             
             # Transcription via Faster-Whisper
             segments, info = self.model.transcribe(audio_data, beam_size=5, language="fr", condition_on_previous_text=False)
