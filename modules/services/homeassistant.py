@@ -130,5 +130,65 @@ class HomeAssistantService:
             return f"Erreur lors du listage des entités: {str(e)}"
 
 
+    def search_entities_by_name(self, query: str) -> str:
+        """
+        Recherche des entités HA via des mots-clés en langage naturel.
+        Cherche dans le friendly_name ET l'entity_id par correspondance partielle.
+        Utilise TOUJOURS cette méthode en premier si tu ne connais pas l'entity_id exact.
+        
+        query : mots-clés naturels, ex: 'bureau prive porte', 'salon lumiere', 'temperature'
+        Retourne les meilleures correspondances avec entity_id, nom et état actuel.
+        """
+        if not self.is_configured:
+            return "Erreur: Home Assistant n'est pas configuré."
+
+        try:
+            url = f"{self.base_url}/api/states"
+            with httpx.Client(timeout=8.0, verify=False) as client:
+                resp = client.get(url, headers=self.headers)
+                resp.raise_for_status()
+                all_states = resp.json()
+
+            # Normalisation : minuscules, sans accents, espaces -> underscores
+            def normalize(text: str) -> str:
+                import unicodedata
+                text = text.lower()
+                text = unicodedata.normalize('NFD', text)
+                text = ''.join(c for c in text if unicodedata.category(c) != 'Mn')
+                return text.replace(' ', '_').replace('-', '_')
+
+            keywords = normalize(query).split('_')
+            keywords = [k for k in keywords if len(k) > 2]  # Ignore mots courts
+
+            scored = []
+            for entity in all_states:
+                eid = entity.get("entity_id", "")
+                fname = entity.get("attributes", {}).get("friendly_name", eid)
+                search_text = normalize(eid) + " " + normalize(fname)
+
+                # Score = nb de keywords trouvés dans le texte de recherche
+                score = sum(1 for kw in keywords if kw in search_text)
+                if score > 0:
+                    scored.append({
+                        "score": score,
+                        "entity_id": eid,
+                        "friendly_name": fname,
+                        "state": entity.get("state"),
+                    })
+
+            if not scored:
+                return f"Aucune entité trouvée correspondant à '{query}'. Essayez des mots-clés plus génériques."
+
+            # Tri par score décroissant, limiter à 8 résultats
+            scored.sort(key=lambda x: x["score"], reverse=True)
+            results = [{"entity_id": r["entity_id"], "friendly_name": r["friendly_name"], "state": r["state"]} for r in scored[:8]]
+            logger.info(f"HA search '{query}' -> {len(results)} résultat(s)")
+            return json.dumps(results, ensure_ascii=False)
+
+        except Exception as e:
+            logger.error(f"Erreur HA search_entities: {e}")
+            return f"Erreur lors de la recherche: {str(e)}"
+
+
 # Instance Singleton
 ha_service = HomeAssistantService()

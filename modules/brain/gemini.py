@@ -65,7 +65,10 @@ class Brain:
                 "CRITIQUE: Le module de transcription vocale fait souvent des erreurs phonétiques (ex: 'Fadila' pour 'FileZilla', "
                 "'codex' pour 'VS Code', 'calculatisse' pour 'Calculatrice'). Corrige-les intelligemment. "
                 "Cependant, ATTENTION: 'Windsurf' (IDE) et 'WindTerm' (Terminal) sont DEUX logiciels DISTINCTS et valides. "
-                "S'il demande explicitement 'Windsurf', n'essaie pas de le corriger par WindTerm, passe bien la chaîne 'Windsurf'."
+                "S'il demande explicitement 'Windsurf', n'essaie pas de le corriger par WindTerm, passe bien la chaîne 'Windsurf'.\n"
+                "HOME ASSISTANT: NEVER guess an entity_id. ALWAYS call search_entities_by_name first with the "
+                "user's natural language keywords (in French, no special chars). "
+                "Inspect the search results, pick the entity_id with the highest score, then call get_entity_state or call_service."
             )
             
             # Récupération dynamique des faits pour le prompt système
@@ -103,6 +106,7 @@ class Brain:
                         vision_service.analyze_surroundings,
                         gmail_service.get_unread_emails_summary, gmail_service.mark_email_as_read,
                         ha_service.get_entity_state, ha_service.call_service, ha_service.list_entities,
+                        ha_service.search_entities_by_name,
                         get_printer_status, get_print_progress,
                         pause_print, resume_print, cancel_print, emergency_stop,
                         get_bambu_status, get_bambu_progress,
@@ -188,6 +192,7 @@ class Brain:
             "get_entity_state": ha_service.get_entity_state,
             "call_service": ha_service.call_service,
             "list_entities": ha_service.list_entities,
+            "search_entities_by_name": ha_service.search_entities_by_name,
             "get_printer_status": get_printer_status,
             "get_print_progress": get_print_progress,
             "pause_print": pause_print,
