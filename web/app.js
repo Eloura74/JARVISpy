@@ -221,6 +221,12 @@ const bambuAccessCodeInput = document.getElementById("bambu-access-code");
 const toastEnabledInput = document.getElementById("toast-enabled");
 const waDefaultPhoneInput = document.getElementById("wa-default-phone");
 const waNotifyAlertsInput = document.getElementById("wa-notify-on-alerts");
+
+// Services Externes (Météo & Maps)
+const openweatherApiKeyInput = document.getElementById("openweather-api-key");
+const googleMapsApiKeyInput = document.getElementById("google-maps-api-key");
+const defaultCityInput = document.getElementById("default-city");
+
 const waQrBtn = document.getElementById("wa-qr-btn");
 const waStatusBadge = document.getElementById("wa-status-badge");
 
@@ -405,6 +411,13 @@ async function saveAllSettings() {
         ? "true"
         : "false"
       : "false",
+    openweather_api_key: openweatherApiKeyInput
+      ? openweatherApiKeyInput.value
+      : "",
+    google_maps_api_key: googleMapsApiKeyInput
+      ? googleMapsApiKeyInput.value
+      : "",
+    default_city: defaultCityInput ? defaultCityInput.value : "",
   };
 
   try {

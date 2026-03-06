@@ -25,6 +25,9 @@ class SettingsUpdateModel(BaseModel):
     toast_enabled: str
     wa_default_phone: str
     wa_notify_on_alerts: str
+    openweather_api_key: str
+    google_maps_api_key: str
+    default_city: str
 
 @router.get("/api/settings")
 async def get_current_settings():
@@ -33,6 +36,8 @@ async def get_current_settings():
     gemini_masked = f"{settings.gemini_api_key[:4]}...{settings.gemini_api_key[-4:]}" if len(settings.gemini_api_key) > 8 else ""
     tavily_masked = f"{settings.tavily_api_key[:4]}...{settings.tavily_api_key[-4:]}" if len(settings.tavily_api_key) > 8 else ""
     ha_token_masked = f"{settings.ha_token[:8]}...{settings.ha_token[-8:]}" if len(settings.ha_token) > 20 else ""
+    openweather_masked = f"{settings.openweather_api_key[:4]}...{settings.openweather_api_key[-4:]}" if len(settings.openweather_api_key) > 8 else ""
+    google_maps_masked = f"{settings.google_maps_api_key[:4]}...{settings.google_maps_api_key[-4:]}" if len(settings.google_maps_api_key) > 8 else ""
     
     return {
         "gemini_api_key": gemini_masked,
@@ -49,10 +54,15 @@ async def get_current_settings():
         "toast_enabled": settings.toast_enabled,
         "wa_default_phone": settings.wa_default_phone,
         "wa_notify_on_alerts": settings.wa_notify_on_alerts,
+        "openweather_api_key": openweather_masked,
+        "google_maps_api_key": google_maps_masked,
+        "default_city": settings.default_city,
         # Versions brutes
         "_raw_gemini": settings.gemini_api_key,
         "_raw_tavily": settings.tavily_api_key,
         "_raw_ha_token": settings.ha_token,
+        "_raw_openweather": settings.openweather_api_key,
+        "_raw_google_maps": settings.google_maps_api_key,
     }
 
 @router.post("/api/settings")
@@ -115,6 +125,18 @@ async def update_settings(update_data: SettingsUpdateModel):
         settings.wa_default_phone = update_data.wa_default_phone
         dotenv.set_key(env_path, "WA_NOTIFY_ON_ALERTS", update_data.wa_notify_on_alerts)
         settings.wa_notify_on_alerts = update_data.wa_notify_on_alerts
+
+        # Services Externes
+        if update_data.openweather_api_key and "..." not in update_data.openweather_api_key:
+            dotenv.set_key(env_path, "OPENWEATHER_API_KEY", update_data.openweather_api_key)
+            settings.openweather_api_key = update_data.openweather_api_key
+            
+        if update_data.google_maps_api_key and "..." not in update_data.google_maps_api_key:
+            dotenv.set_key(env_path, "GOOGLE_MAPS_API_KEY", update_data.google_maps_api_key)
+            settings.google_maps_api_key = update_data.google_maps_api_key
+            
+        dotenv.set_key(env_path, "DEFAULT_CITY", update_data.default_city)
+        settings.default_city = update_data.default_city
 
         return {"status": "success", "message": "Paramètres sauvegardés avec succès. Redémarrage du serveur conseillé pour les clés."}
     except Exception as e:

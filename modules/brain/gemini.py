@@ -21,6 +21,10 @@ class Brain:
             "Tu vouvoies toujours l'utilisateur et l'appelles 'Monsieur'. "
             "RÈGLE ABSOLUE: Tes réponses doivent être EXTRÊMEMENT COURTES (1 à 2 phrases maximum) pour économiser la bande passante et les tokens. "
             "Va droit au but. N'esquisse jamais de longues listes ou d'explications superflues sauf si le mot 'détaille' est prononcé.\n"
+            "RÈGLE CRITIQUE: Réponds UNIQUEMENT ET STRICTEMENT à la dernière question ou commande de l'utilisateur. "
+            "IGNORE complètement les sujets des messages précédents. Ne fournis jamais un rapport cumulatif, focalise-toi sur l'instant présent.\n"
+            "RÈGLE CRITIQUE: Réponds UNIQUEMENT ET STRICTEMENT à la dernière question ou commande de l'utilisateur. "
+            "IGNORE complètement les sujets des messages précédents. Ne fournis jamais un rapport cumulatif, focalise-toi sur l'instant présent.\n"
             "Tu possèdes une mémoire SQLite à long terme. Si l'utilisateur te donne une nouvelle information personnelle "
             "importante (nom, préférence, ville, fait à retenir) ou te demande de retenir quelque chose, "
             "utilise l'outil `remember_info`. Pour corriger/oublier, utilise `forget_info`.\n"
@@ -60,6 +64,8 @@ class Brain:
             )
             from modules.memory.context import context_buffer
             from modules.notifications.whatsapp import send_whatsapp, get_whatsapp_status
+            from modules.services.weather import get_current_weather, get_weather_forecast
+            from modules.services.maps import get_travel_time
             
             # Mise à jour des instructions pour indiquer qu'il maîtrise les fenêtres et la correction STT
             self.system_instruction += (
@@ -74,7 +80,10 @@ class Brain:
                 "Inspect the search results, pick the entity_id with the highest score, then call get_entity_state or call_service.\n"
                 "WHATSAPP: quand l'utilisateur dit 'envoie un message/WhatsApp à [NOM]', appelle IMMÉDIATEMENT "
                 "send_whatsapp(to='[NOM]', message='...') sans jamais demander de numéro. "
-                "Le système résout le contact automatiquement. Si le message n'est pas précisé, demande-le."
+                "Le système résout le contact automatiquement. Si le message n'est pas précisé, demande-le.\n"
+                "METEO: Pour la météo, utilise *get_current_weather* ou *get_weather_forecast*. "
+                "CRITIQUE : Ne l'invente jamais et NE MÉLANGE CA AVEC AUCUN AUTRE SUJET. Si l'outil renvoie une erreur, dis-le simplement, sans t'excuser sur un autre module (ex: l'imprimante).\n"
+                "TRAJET/TRAFIC: Pour les temps de trajet et le trafic, utilise *get_travel_time* avec la destination (et l'origine si précisée)."
             )
             
             # Récupération dynamique des faits pour le prompt système
@@ -82,22 +91,18 @@ class Brain:
             facts_text = "\n".join([f"- {k}: {v}" for k, v in all_facts.items()]) if all_facts else "(Aucun fait mémorisé)"
             final_sys_instruction = self.system_instruction.replace("{facts_context}", facts_text)
             
+            # Injection de l'historique récent dans les instructions (pour éviter la ré-exécution d'outils)
+            history_rows = memory.get_recent_history(limit=5)
+            if history_rows:
+                history_text = "\n".join([f"{msg['role'].upper()}: {msg['content']}" for msg in history_rows])
+                final_sys_instruction += f"\n\nVoici les derniers échanges pour le contexte de la conversation (utilise-les uniquement pour comprendre de quoi je parle, n'y réponds pas) :\n{history_text}"
+            
             self.client = genai.Client(api_key=settings.gemini_api_key)
             
-            # Récupération de l'historique SQLite
-            history_rows = memory.get_recent_history(limit=10)
-            gemini_history = []
-            for msg in history_rows:
-                # Gemini attend 'user' ou 'model' pour google.genai API -> types.Content
-                role = "model" if msg["role"] == "assistant" else "user"
-                gemini_history.append(
-                    types.Content(role=role, parts=[types.Part.from_text(text=msg["content"])])
-                )
-            
-            # Démarrage d'une session de chat pour conserver l'historique
+            # Démarrage d'une session de chat sans historique natif (pour isoler les appels de fonctions)
             self.chat_session = self.client.chats.create(
                 model=self.model_name,
-                history=gemini_history,
+                history=[],
                 config=types.GenerateContentConfig(
                     system_instruction=final_sys_instruction,
                     temperature=0.7,
@@ -119,8 +124,10 @@ class Brain:
                         pause_bambu, resume_bambu, stop_bambu,
                         analyze_screen,
                         context_buffer.get_suggestions,
-                        send_whatsapp, get_whatsapp_status
-                    ] # ~34 outils total
+                        send_whatsapp, get_whatsapp_status,
+                        get_current_weather, get_weather_forecast,
+                        get_travel_time
+                    ] # Outils complets
                 )
             )
             logger.info(f"Cerveau J.A.R.V.I.S initialisé avec {self.model_name} et les outils système avancés.")
@@ -181,6 +188,8 @@ class Brain:
         from modules.system.screenshot import analyze_screen
         from modules.memory.context import context_buffer
         from modules.notifications.whatsapp import send_whatsapp, get_whatsapp_status
+        from modules.services.weather import get_current_weather, get_weather_forecast
+        from modules.services.maps import get_travel_time
         
         # Dictionnaire manuel des outils disponibles (pour le mapping)
         tools_map = {
@@ -220,6 +229,9 @@ class Brain:
             "get_suggestions": context_buffer.get_suggestions,
             "send_whatsapp": send_whatsapp,
             "get_whatsapp_status": get_whatsapp_status,
+            "get_current_weather": get_current_weather,
+            "get_weather_forecast": get_weather_forecast,
+            "get_travel_time": get_travel_time,
         }
             
         main_loop = asyncio.get_running_loop()

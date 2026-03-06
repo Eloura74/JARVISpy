@@ -31,6 +31,11 @@ class Settings(BaseSettings):
     wa_default_phone: str = ""
     wa_notify_on_alerts: str = "false"
     
+    # Nouvelles Intégrations (Services Externes)
+    openweather_api_key: str = ""
+    google_maps_api_key: str = ""
+    default_city: str = ""
+    
     # Base de données
     db_path: str = "data/jarvis.db"
     
