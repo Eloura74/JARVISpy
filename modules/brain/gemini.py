@@ -56,11 +56,13 @@ class Brain:
             from modules.services.homeassistant import ha_service
             from modules.services.moonraker import (
                 get_printer_status, get_print_progress,
-                pause_print, resume_print, cancel_print, emergency_stop
+                pause_print, resume_print, cancel_print, emergency_stop,
+                set_moonraker_extruder_temp, set_moonraker_bed_temp, show_moonraker_camera
             )
             from modules.services.bambu import (
                 get_bambu_status, get_bambu_progress,
-                pause_bambu, resume_bambu, stop_bambu
+                pause_bambu, resume_bambu, stop_bambu,
+                set_bambu_extruder_temp, set_bambu_bed_temp, show_bambu_camera
             )
             from modules.memory.context import context_buffer
             from modules.notifications.whatsapp import send_whatsapp, get_whatsapp_status
@@ -81,6 +83,7 @@ class Brain:
                 "WHATSAPP: quand l'utilisateur dit 'envoie un message/WhatsApp à [NOM]', appelle IMMÉDIATEMENT "
                 "send_whatsapp(to='[NOM]', message='...') sans jamais demander de numéro. "
                 "Le système résout le contact automatiquement. Si le message n'est pas précisé, demande-le.\n"
+                "IMPRIMANTES 3D: L'imprimante 'VZBot' utilise les fonctions contenant 'moonraker' (ex: set_moonraker_extruder_temp). L'imprimante 'Bambu' ou 'Bambu Lab' utilise les fonctions contenant 'bambu' (ex: set_bambu_extruder_temp). C'est très important de ne pas se tromper de machine.\n"
                 "METEO: Pour la météo, utilise *get_current_weather* ou *get_weather_forecast*. "
                 "CRITIQUE : Ne l'invente jamais et NE MÉLANGE CA AVEC AUCUN AUTRE SUJET. Si l'outil renvoie une erreur, dis-le simplement, sans t'excuser sur un autre module (ex: l'imprimante).\n"
                 "TRAJET/TRAFIC: Pour les temps de trajet et le trafic, utilise *get_travel_time* avec la destination (et l'origine si précisée)."
@@ -120,8 +123,10 @@ class Brain:
                         ha_service.search_entities_by_name,
                         get_printer_status, get_print_progress,
                         pause_print, resume_print, cancel_print, emergency_stop,
+                        set_moonraker_extruder_temp, set_moonraker_bed_temp, show_moonraker_camera,
                         get_bambu_status, get_bambu_progress,
                         pause_bambu, resume_bambu, stop_bambu,
+                        set_bambu_extruder_temp, set_bambu_bed_temp, show_bambu_camera,
                         analyze_screen,
                         context_buffer.get_suggestions,
                         send_whatsapp, get_whatsapp_status,
@@ -179,11 +184,13 @@ class Brain:
         from modules.services.homeassistant import ha_service
         from modules.services.moonraker import (
             get_printer_status, get_print_progress,
-            pause_print, resume_print, cancel_print, emergency_stop
+            pause_print, resume_print, cancel_print, emergency_stop,
+            set_moonraker_extruder_temp, set_moonraker_bed_temp, show_moonraker_camera
         )
         from modules.services.bambu import (
             get_bambu_status, get_bambu_progress,
-            pause_bambu, resume_bambu, stop_bambu
+            pause_bambu, resume_bambu, stop_bambu,
+            set_bambu_extruder_temp, set_bambu_bed_temp, show_bambu_camera
         )
         from modules.system.screenshot import analyze_screen
         from modules.memory.context import context_buffer
@@ -225,6 +232,12 @@ class Brain:
             "pause_bambu": pause_bambu,
             "resume_bambu": resume_bambu,
             "stop_bambu": stop_bambu,
+            "set_bambu_extruder_temp": set_bambu_extruder_temp,
+            "set_bambu_bed_temp": set_bambu_bed_temp,
+            "show_bambu_camera": show_bambu_camera,
+            "set_moonraker_extruder_temp": set_moonraker_extruder_temp,
+            "set_moonraker_bed_temp": set_moonraker_bed_temp,
+            "show_moonraker_camera": show_moonraker_camera,
             "analyze_screen": analyze_screen,
             "get_suggestions": context_buffer.get_suggestions,
             "send_whatsapp": send_whatsapp,

@@ -41,3 +41,42 @@ def emergency_stop() -> str:
         return f"Erreur lors de l'arrêt d'urgence : {data['error']}"
     logger.warning("ARRÊT D'URGENCE Klipper déclenché !")
     return "ARRÊT D'URGENCE exécuté. L'imprimante est à l'arrêt."
+
+
+def set_moonraker_extruder_temp(temp: float) -> str:
+    """Modifie la température cible de l'extrudeur (buse)."""
+    script = f"M104 S{temp}"
+    data = moonraker_client.post("/printer/gcode/script", {"script": script})
+    if "error" in data:
+        return f"Erreur lors du réglage de la température de la buse : {data['error']}"
+    logger.info(f"Température buse VZBot réglée à {temp}°C.")
+    return f"La température de la buse de la VZBot est réglée à {temp} degrés."
+
+
+def set_moonraker_bed_temp(temp: float) -> str:
+    """Modifie la température cible du lit chauffant."""
+    script = f"M140 S{temp}"
+    data = moonraker_client.post("/printer/gcode/script", {"script": script})
+    if "error" in data:
+        return f"Erreur lors du réglage de la température du lit : {data['error']}"
+    logger.info(f"Température lit chauffant VZBot réglée à {temp}°C.")
+    return f"La température du lit chauffant de la VZBot est réglée à {temp} degrés."
+
+
+def show_moonraker_camera() -> str:
+    """Ouvre la caméra de la VZBot dans le navigateur."""
+    from core.config import settings
+    import webbrowser
+    
+    ip = settings.moonraker_url
+    if not ip:
+        return "L'URL de Moonraker n'est pas configurée dans les paramètres."
+        
+    # URL classique d'une caméra mainsail/fluidd via crowsnest
+    cam_url = f"{ip.rstrip('/')}/webcam/?action=stream"
+    try:
+        webbrowser.open(cam_url)
+        return "J'ouvre le flux vidéo de la caméra VZBot sur votre écran."
+    except Exception as e:
+        logger.error(f"Erreur d'ouverture de caméra: {e}")
+        return "Impossible d'ouvrir le navigateur pour afficher la caméra VZBot."

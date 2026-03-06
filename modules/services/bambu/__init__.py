@@ -1,7 +1,10 @@
 """Package bambu — Interface Bambu Lab via MQTT local (port 8883 TLS)."""
 from modules.services.bambu.client import bambu_client
 from modules.services.bambu.status import get_bambu_status, get_bambu_progress
-from modules.services.bambu.control import pause_bambu, resume_bambu, stop_bambu
+from modules.services.bambu.control import (
+    pause_bambu, resume_bambu, stop_bambu,
+    set_bambu_extruder_temp, set_bambu_bed_temp, show_bambu_camera
+)
 
 __all__ = [
     "bambu_client",
@@ -10,4 +13,7 @@ __all__ = [
     "pause_bambu",
     "resume_bambu",
     "stop_bambu",
+    "set_bambu_extruder_temp",
+    "set_bambu_bed_temp",
+    "show_bambu_camera",
 ]
