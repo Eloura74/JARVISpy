@@ -1,0 +1,85 @@
+.app-layout {
+  width: 98vw;
+  height: 98vh;
+  display: grid;
+  grid-template-areas:
+    "status status status"
+    "left orbit right"
+    "left orbit right";
+  grid-template-columns: 320px 1fr 320px;
+  grid-template-rows: auto 1fr;
+  gap: 20px;
+  padding: 10px;
+}
+
+#status-mount {
+  grid-area: status;
+}
+
+.stage-left {
+  grid-area: left;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.orb-mount {
+  grid-area: orbit;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+
+.stage-right {
+  grid-area: right;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+/* Amélioration des slots de contenu */
+.analytics-mount {
+  height: 180px;
+}
+.terminal-mount {
+  height: 350px;
+}
+.chat-mount {
+  flex: 1;
+}
+
+.settings-trigger {
+  position: fixed;
+  bottom: 25px;
+  left: 25px; /* Déplacé à gauche pour ne pas gêner */
+  background: var(--primary-dim);
+  border: 1px solid var(--primary);
+  color: var(--primary);
+  width: 44px;
+  height: 44px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.2rem;
+  z-index: 2000;
+  cursor: pointer;
+  transition: var(--transition-normal);
+  box-shadow: var(--glow-soft);
+}
+
+.settings-trigger:hover {
+  background: var(--primary);
+  color: var(--bg-dark);
+  box-shadow: var(--glow-hard);
+  transform: rotate(90deg);
+}
+
+/* Helper pour masquer les scrollbars inutiles */
+.hide-scroll {
+  scrollbar-width: none;
+}
+.hide-scroll::-webkit-scrollbar {
+  display: none;
+}

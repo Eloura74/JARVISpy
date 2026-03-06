@@ -35,9 +35,24 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Configuration des fichiers statiques pour le WebUI
-static_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "web")
-os.makedirs(static_dir, exist_ok=True)
+# Configuration des dossiers statiques
+base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+dist_dir = os.path.join(base_dir, "dist")
+web_dir = os.path.join(base_dir, "web")
+
+# Choix du dossier source
+if os.path.exists(os.path.join(dist_dir, "index.html")):
+    static_dir = dist_dir
+    logger.info("Utilisation de l'interface PRODUCTION (dist/)")
+    # Montage critique pour les assets Vite
+    app.mount("/assets", StaticFiles(directory=os.path.join(dist_dir, "assets")), name="assets")
+else:
+    static_dir = web_dir
+    logger.info("Utilisation de l'interface DÉVELOPPEMENT (web/)")
+    # Montage critique pour les imports de modules JS/CSS en dev
+    app.mount("/src", StaticFiles(directory=os.path.join(web_dir, "src")), name="src")
+
+# Montage générique pour les fichiers à la racine de static_dir (PNG, Favicon, etc)
 app.mount("/static", StaticFiles(directory=static_dir), name="static")
 
 # Liste des connexions WebSocket actives

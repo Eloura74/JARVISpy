@@ -3,436 +3,53 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>J.A.R.V.I.S Interface</title>
-    <link rel="stylesheet" href="/static/style.css" />
-    <!-- Google Fonts pour un look moderne -->
+    <title>JARVIS SYSTEM | CORE 0.2</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Rajdhani:wght@400;500;600&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Rajdhani:wght@400;500;600;700&family=Space+Mono&display=swap"
       rel="stylesheet"
     />
+    <link rel="stylesheet" href="/src/styles/global.css" />
+    <link rel="stylesheet" href="/src/styles/layout.css" />
+    <link rel="stylesheet" href="/src/components/Status/Status.css" />
+    <link rel="stylesheet" href="/src/components/Orb/Orb.css" />
+    <link rel="stylesheet" href="/src/components/Terminal/Terminal.css" />
+    <link rel="stylesheet" href="/src/components/Chat/Chat.css" />
+    <link rel="stylesheet" href="/src/components/Settings/Settings.css" />
   </head>
   <body>
-    <div class="background-overlay"></div>
+    <div id="app" class="app-layout">
+      <div id="status-mount"></div>
 
-    <div class="glass-container">
-      <!-- HEADER -->
-      <header class="header">
-        <div class="logo">
-          <div class="core-reactor"></div>
-          <h1>J.A.R.V.I.S. <span class="version">v0.1.0</span></h1>
-        </div>
-        <div class="status-bar">
-          <div class="status-indicator offline" id="connection-status"></div>
-          <span id="connection-text">Hors ligne</span>
-          <button id="settings-btn" class="icon-btn" title="Paramètres">
-            ⚙️
-          </button>
-        </div>
-      </header>
-
-      <!-- MAIN CONTENT -->
-      <main class="main-content">
-        <!-- Colonne Gauche: Système et Statut -->
-        <div class="column left-panel">
-          <div class="panel glass-panel">
-            <h2>Statut Système</h2>
-            <ul class="status-list">
-              <li>
-                <span class="label">Microphone:</span>
-                <span class="value default">En attente</span>
-              </li>
-              <li>
-                <span class="label">Module TTS:</span>
-                <span class="value" id="tts-status">Inactif</span>
-              </li>
-              <li>
-                <span class="label">Brain (Gemini):</span>
-                <span class="value" id="brain-status">En veille</span>
-              </li>
-            </ul>
-          </div>
-
-          <!-- WIDGET IMPRESSION 3D LIVE -->
-          <div
-            class="panel glass-panel"
-            id="print-widget"
-            style="display: none"
-          >
-            <h2>🖨️ Impression 3D</h2>
-            <div id="print-widget-content">
-              <!-- Injecté via JS -->
-            </div>
-          </div>
-
-          <div class="panel glass-panel orb-container">
-            <div class="ai-orb" id="ai-orb">
-              <div class="ring ring-1"></div>
-              <div class="ring ring-2"></div>
-              <div class="ring ring-3"></div>
-              <div class="core"></div>
-            </div>
-            <div class="orb-label" id="orb-label">I.D.L.E.</div>
+      <aside class="stage-left">
+        <div id="analytics-mount" class="glass">
+          <div class="card-header">CORE TELEMETRY</div>
+          <div class="card-body">
+            <div class="metric">CPU <span class="v">08.2%</span></div>
+            <div class="metric">MEM <span class="v">1.4 GB</span></div>
+            <div class="metric">LAT <span class="v">12 ms</span></div>
           </div>
         </div>
+      </aside>
 
-        <!-- Colonne Droite: Logs et Dialogue -->
-        <div class="column right-panel">
-          <div class="panel glass-panel terminal-panel">
-            <h2>Flux de données</h2>
-            <div class="terminal" id="log-terminal">
-              <!-- Les logs apparaîtront ici -->
-              <div class="log-line system">
-                Initialisation de l'interface graphique...
-              </div>
-            </div>
-          </div>
+      <main id="orb-mount" class="orb-mount"></main>
 
-          <div class="panel glass-panel transcript-panel">
-            <h2>Transcriptions</h2>
-            <div class="transcript-box" id="transcript-box">
-              <!-- Dialogue Utilisateur/JARVIS -->
-            </div>
-            <div class="chat-input-container">
-              <input
-                type="text"
-                id="chat-input"
-                placeholder="Envoyer un message à JARVIS..."
-                autocomplete="off"
-              />
-              <button id="chat-send-btn" class="icon-btn" title="Envoyer">
-                ➤
-              </button>
-            </div>
-          </div>
-        </div>
-      </main>
+      <aside class="stage-right">
+        <div id="terminal-mount"></div>
+        <div id="chat-mount" class="glass"></div>
+      </aside>
 
-      <!-- ZONE POUR LES POPUPS / WIDGETS GENS PAR LE WEB SEARCH -->
-      <div id="widgets-container" class="widgets-container hidden">
-        <!-- Injected via JS -->
-      </div>
-
-      <!-- SETTINGS MODAL -->
-      <dialog id="settings-modal" class="glass-modal">
-        <div
-          class="modal-content glass-panel"
-          style="width: 500px; max-width: 95%"
-        >
-          <div class="modal-header">
-            <h2>Paramètres</h2>
-            <div class="tabs">
-              <button class="tab-btn active" data-tab="general">Général</button>
-              <button class="tab-btn" data-tab="modules">Modules</button>
-              <button class="tab-btn" data-tab="memory">Mémoire</button>
-            </div>
-          </div>
-
-          <div class="tab-content active" id="tab-general">
-            <form id="settings-form">
-              <div class="form-group">
-                <label for="gemini-key">Clé API Gemini :</label>
-                <input
-                  type="password"
-                  id="gemini-key"
-                  placeholder="AIzaSy..."
-                />
-              </div>
-              <div class="form-group">
-                <label for="tavily-key">Clé API Tavily :</label>
-                <input type="password" id="tavily-key" placeholder="tvly-..." />
-              </div>
-              <div class="form-group" style="margin-top: 10px">
-                <label for="tts-voice">Voix de Synthèse (Kokoro) :</label>
-                <select id="tts-voice" class="custom-select">
-                  <option value="">Chargement...</option>
-                </select>
-              </div>
-              <div class="form-actions">
-                <button type="button" class="btn secondary close-settings-btn">
-                  Annuler
-                </button>
-                <button type="submit" class="btn primary">Sauvegarder</button>
-              </div>
-            </form>
-          </div>
-
-          <!-- TAB MODULES -->
-          <div class="tab-content" id="tab-modules">
-            <div
-              class="form-group"
-              style="
-                padding: 10px;
-                background: rgba(0, 0, 0, 0.2);
-                border-radius: 5px;
-                margin-bottom: 10px;
-              "
-            >
-              <h3 style="color: var(--primary-color)">👁️ Vision (OpenCV)</h3>
-              <label
-                style="
-                  display: flex;
-                  align-items: center;
-                  gap: 10px;
-                  margin-top: 5px;
-                "
-              >
-                <input type="checkbox" id="vision-enabled" /> Activer la Caméra
-              </label>
-              <label
-                style="
-                  display: flex;
-                  align-items: center;
-                  gap: 10px;
-                  margin-top: 5px;
-                "
-              >
-                Index Caméra:
-                <input
-                  type="number"
-                  id="camera-index"
-                  min="0"
-                  max="10"
-                  style="width: 60px"
-                />
-              </label>
-
-              <div style="margin-top: 10px">
-                <button
-                  type="button"
-                  class="btn secondary"
-                  id="test-camera-btn"
-                  style="font-size: 0.8rem; padding: 5px 10px"
-                >
-                  📸 Tester Caméra (Snapshot)
-                </button>
-                <img
-                  id="camera-preview"
-                  src=""
-                  style="
-                    display: none;
-                    margin-top: 10px;
-                    max-width: 100%;
-                    border-radius: 5px;
-                    border: 1px solid var(--primary-color);
-                  "
-                />
-              </div>
-            </div>
-
-            <div
-              class="form-group"
-              style="
-                padding: 10px;
-                background: rgba(0, 0, 0, 0.2);
-                border-radius: 5px;
-                margin-bottom: 10px;
-              "
-            >
-              <h3 style="color: var(--primary-color)">✉️ Google Mail</h3>
-              <label
-                style="
-                  display: flex;
-                  align-items: center;
-                  gap: 10px;
-                  margin-top: 5px;
-                "
-              >
-                <input type="checkbox" id="gmail-enabled" /> Activer lecture des
-                Emails (OAuth)
-              </label>
-            </div>
-
-            <div
-              class="form-group"
-              style="
-                padding: 10px;
-                background: rgba(0, 0, 0, 0.2);
-                border-radius: 5px;
-                margin-bottom: 10px;
-              "
-            >
-              <h3 style="color: var(--primary-color)">🏠 Home Assistant</h3>
-              <label style="margin-top: 5px"
-                >URL (ex: http://192.168.1.100:8123)</label
-              >
-              <input type="text" id="ha-url" placeholder="http://..." />
-              <label style="margin-top: 5px"
-                >Token d'accès longue durée (LLAT)</label
-              >
-              <input type="password" id="ha-token" placeholder="eyJhbG..." />
-            </div>
-
-            <div
-              class="form-group"
-              style="
-                padding: 10px;
-                background: rgba(0, 0, 0, 0.2);
-                border-radius: 5px;
-                margin-bottom: 10px;
-              "
-            >
-              <h3 style="color: var(--primary-color)">
-                🖨️ Klipper / Moonraker
-              </h3>
-              <label style="margin-top: 5px"
-                >URL Moonraker (ex: http://192.168.1.50)</label
-              >
-              <input type="text" id="moonraker-url" placeholder="http://" />
-            </div>
-
-            <div
-              class="form-group"
-              style="
-                padding: 10px;
-                background: rgba(0, 0, 0, 0.2);
-                border-radius: 5px;
-                margin-bottom: 10px;
-              "
-            >
-              <h3 style="color: var(--primary-color)">🐼 Bambu Lab</h3>
-              <label style="margin-top: 5px">IP de l'imprimante</label>
-              <input type="text" id="bambu-ip" placeholder="192.168.1.xxx" />
-              <label style="margin-top: 5px"
-                >Numéro de série (LCD > Infos)</label
-              >
-              <input type="text" id="bambu-serial" placeholder="01S00C000..." />
-              <label style="margin-top: 5px">Access Code (LCD > Réseau)</label>
-              <input
-                type="password"
-                id="bambu-access-code"
-                placeholder="8 caractères"
-              />
-            </div>
-
-            <div
-              class="form-group"
-              style="
-                padding: 10px;
-                background: rgba(0, 0, 0, 0.2);
-                border-radius: 5px;
-                margin-bottom: 10px;
-              "
-            >
-              <h3 style="color: var(--primary-color)">🌍 Services Externes</h3>
-              <label style="margin-top: 5px">Clé API OpenWeatherMap</label>
-              <input
-                type="password"
-                id="openweather-api-key"
-                placeholder="Optionnel"
-              />
-              <label style="margin-top: 5px">Clé API Google Maps</label>
-              <input
-                type="password"
-                id="google-maps-api-key"
-                placeholder="Optionnel"
-              />
-              <label style="margin-top: 5px"
-                >Ville par défaut (ex: Paris, FR)</label
-              >
-              <input
-                type="text"
-                id="default-city"
-                placeholder="Lieu de résidence"
-              />
-            </div>
-
-            <div
-              class="form-group"
-              style="
-                padding: 10px;
-                background: rgba(0, 0, 0, 0.2);
-                border-radius: 5px;
-                margin-bottom: 10px;
-              "
-            >
-              <h3 style="color: var(--primary-color)">🔔 Notifications</h3>
-              <div
-                style="
-                  display: flex;
-                  align-items: center;
-                  gap: 10px;
-                  margin-top: 5px;
-                "
-              >
-                <input type="checkbox" id="toast-enabled" />
-                <label for="toast-enabled"
-                  >Notifications bureau Windows (toast)</label
-                >
-              </div>
-              <label style="margin-top: 10px"
-                >WhatsApp — Numéro par défaut (format: +33XXXXXXXXX)</label
-              >
-              <input type="text" id="wa-default-phone" placeholder="+336..." />
-              <div
-                style="
-                  display: flex;
-                  align-items: center;
-                  gap: 10px;
-                  margin-top: 8px;
-                "
-              >
-                <input type="checkbox" id="wa-notify-on-alerts" />
-                <label for="wa-notify-on-alerts"
-                  >Envoyer les alertes proactives par WhatsApp</label
-                >
-              </div>
-              <div style="display: flex; gap: 8px; margin-top: 10px">
-                <button
-                  type="button"
-                  id="wa-qr-btn"
-                  class="btn secondary"
-                  style="font-size: 0.8rem; padding: 6px 12px"
-                >
-                  📱 Afficher QR WhatsApp
-                </button>
-                <span
-                  id="wa-status-badge"
-                  style="font-size: 0.75rem; align-self: center; opacity: 0.7"
-                  >Bridge non démarré</span
-                >
-              </div>
-            </div>
-
-            <div class="form-actions">
-              <button type="button" class="btn secondary close-settings-btn">
-                Fermer
-              </button>
-              <button type="button" class="btn primary" id="save-modules-btn">
-                Sauvegarder Tout
-              </button>
-            </div>
-          </div>
-
-          <div class="tab-content" id="tab-memory">
-            <div class="memory-container">
-              <table class="memory-table">
-                <thead>
-                  <tr>
-                    <th>Clé</th>
-                    <th>Valeur</th>
-                    <th>Action</th>
-                  </tr>
-                </thead>
-                <tbody id="memory-tbody">
-                  <!-- Injected via JS -->
-                  <tr>
-                    <td colspan="3" style="text-align: center">
-                      Chargement de la mémoire...
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-            <div class="form-actions">
-              <button type="button" class="btn secondary close-settings-btn">
-                Fermer
-              </button>
-            </div>
-          </div>
-        </div>
-      </dialog>
+      <div id="settings-mount"></div>
+      <button
+        id="open-settings"
+        class="settings-trigger"
+        title="System Settings"
+      >
+        ⚙
+      </button>
     </div>
 
-    <script src="/static/app.js"></script>
+    <script type="module" src="/src/app.js"></script>
   </body>
 </html>
