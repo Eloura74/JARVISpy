@@ -44,7 +44,6 @@ class AudioAnalyzer {
 
     this.analyser.getByteTimeDomainData(this.dataArray);
 
-    // Calcul RMS (Root Mean Square) pour le volume
     let sum = 0;
     for (let i = 0; i < this.dataArray.length; i++) {
       const v = (this.dataArray[i] - 128) / 128;
@@ -52,8 +51,29 @@ class AudioAnalyzer {
     }
     const rms = Math.sqrt(sum / this.dataArray.length);
 
-    // Mettre à jour le store (audioLevel entre 0 et 1)
+    // Mise à jour du niveau sonore
     store.setState({ audioLevel: rms });
+
+    // --- LOGIQUE DE TRANSITION D'ÉTAT LOCALE ---
+    // Si on détecte un volume signifiant (> 0.05)
+    // On passe en "listening" si on n'est pas déjà en train de "penser" ou "parler"
+    const currentStatus = store.state.orbStatus;
+
+    if (rms > 0.05) {
+      if (currentStatus === "idle") {
+        store.setState({ orbStatus: "listening" });
+      }
+      this.silenceCounter = 0; // Reset silence si bruit
+    } else {
+      // Si silence prolongé (~1s à 60fps = 60 ticks)
+      if (currentStatus === "listening") {
+        this.silenceCounter = (this.silenceCounter || 0) + 1;
+        if (this.silenceCounter > 60) {
+          store.setState({ orbStatus: "idle" });
+          this.silenceCounter = 0;
+        }
+      }
+    }
 
     requestAnimationFrame(() => this._tick());
   }

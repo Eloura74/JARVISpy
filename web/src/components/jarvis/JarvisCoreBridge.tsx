@@ -26,32 +26,14 @@ export class JarvisCoreBridge {
   }
 
   init() {
-    // Premier rendu
     this.render();
 
-    // Abonnement aux changements d'état
     store.subscribe((state) => {
-      let needsUpdate = false;
-
       if (state.orbStatus !== this.currentOrbStatus) {
         this.currentOrbStatus = state.orbStatus as JarvisMode;
-        needsUpdate = true;
-      }
-
-      // On récupère le niveau audio depuis le store (mis à jour par AudioAnalyzer)
-      if (state.audioLevel !== this.currentAudioLevel) {
-        this.currentAudioLevel = state.audioLevel;
-        needsUpdate = true;
-      }
-
-      if (needsUpdate) {
         this.render();
       }
     });
-
-    // Démarrer l'analyseur audio au premier rendu (nécessite une interaction utilisateur ou peut être lancé ici)
-    // Note: Chrome bloque parfois l'AudioContext sans interaction.
-    // On le lancera au premier "click" sur la page si besoin dans app.js.
   }
 
   render() {
