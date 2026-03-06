@@ -73,6 +73,10 @@ async def main():
     # Initialisation des différents modules de l'assistant
     setup_modules()
     
+    # Démarrage du système d'alertes proactives (asyncio, non-bloquant, 0 token Gemini)
+    from modules.alerts import start_all_monitors
+    start_all_monitors()
+    
     # Laisser un peu de temps au serveur pour démarrer
     await asyncio.sleep(1)
     

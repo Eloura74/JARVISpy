@@ -480,3 +480,112 @@ if (chatInput) {
     }
   });
 }
+
+// --- WIDGET IMPRESSION 3D LIVE ---
+const printWidget = document.getElementById("print-widget");
+const printWidgetContent = document.getElementById("print-widget-content");
+let printPollInterval = null;
+
+function renderPrinterCard(name, data) {
+  if (!data) return "";
+  const state = data["état"] || "?";
+  const pct = data["avancement_%"] ?? data["avancement_percent"] ?? 0;
+  const file = data["fichier"] || data["fichier_en_cours"] || "";
+  const remain =
+    data["temps_restant_min"] ?? data["temps_restant_estimé_min"] ?? null;
+
+  // Normalise les objets temp qui peuvent venir de Bambu OU Moonraker
+  function parseTemp(obj) {
+    if (!obj || typeof obj !== "object") return null;
+    return {
+      actuel: obj.actuel ?? obj.temp_actuelle ?? "",
+      cible: obj.cible ?? obj.temp_cible ?? "",
+    };
+  }
+  const extT = parseTemp(data["extrudeur_°C"] || data["extrudeur"]);
+  const bedT = parseTemp(data["plateau_°C"] || data["plateau"]);
+  const isActive = [
+    "En impression",
+    "RUNNING",
+    "En pause",
+    "PAUSE",
+    "printing",
+    "paused",
+  ].includes(state);
+
+  const progressBar = isActive
+    ? `<div style="background:rgba(0,200,255,.15);border-radius:4px;height:8px;margin:6px 0;">
+         <div style="background:var(--primary-color);height:8px;border-radius:4px;width:${pct}%;transition:width .5s;"></div>
+       </div>
+       <div style="display:flex;justify-content:space-between;font-size:.75rem;color:var(--text-muted);">
+         <span>${pct}%</span>
+         ${remain !== null ? `<span>ETA: ${remain} min</span>` : ""}
+       </div>`
+    : `<div style="font-size:.75rem;color:var(--text-muted);margin-top:4px;">${state}</div>`;
+
+  const temps =
+    extT || bedT
+      ? `<div style="display:flex;gap:12px;font-size:.75rem;margin-top:4px;color:var(--text-muted);">
+         ${extT ? `<span>🧯 ${extT.actuel}°/${extT.cible}°</span>` : ""}
+         ${bedT ? `<span>🛏 ${bedT.actuel}°/${bedT.cible}°</span>` : ""}
+       </div>`
+      : "";
+
+  return `
+    <div style="margin-bottom:10px;padding:8px;background:rgba(0,0,0,.2);border-radius:6px;">
+      <div style="font-weight:600;font-size:.85rem;">${name}
+        <span style="float:right;font-size:.7rem;opacity:.6;">${state}</span>
+      </div>
+      ${file ? `<div style="font-size:.7rem;opacity:.5;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${file}</div>` : ""}
+      ${progressBar}
+      ${temps}
+    </div>`;
+}
+
+async function pollPrintStatus() {
+  try {
+    const res = await fetch("/api/print-status");
+    if (!res.ok) return;
+    const data = await res.json();
+
+    const bambu = data.bambu;
+    const moonraker = data.moonraker;
+
+    // Toujours afficher si des données existent (même en veille)
+    const anyData = bambu !== null || moonraker !== null;
+    const activeStates = [
+      "En impression",
+      "RUNNING",
+      "En pause",
+      "PAUSE",
+      "printing",
+      "paused",
+    ];
+    const bambuActive =
+      bambu && activeStates.includes(bambu["état"] || bambu["state"] || "");
+    const moonrakerActive =
+      moonraker &&
+      activeStates.includes(moonraker["état"] || moonraker["state"] || "");
+
+    if (anyData) {
+      printWidget.style.display = "block";
+      let html = "";
+      if (bambu) html += renderPrinterCard("🐼 Bambu Lab", bambu);
+      if (moonraker) html += renderPrinterCard("🖨️ Klipper", moonraker);
+      printWidgetContent.innerHTML =
+        html || "<div style='opacity:.5;font-size:.8rem'>Aucune donnée</div>";
+    } else {
+      printWidget.style.display = "none";
+    }
+
+    // Poll 5s en impression, 15s en veille (plus réactif que 30s)
+    const nextInterval = bambuActive || moonrakerActive ? 5000 : 15000;
+    if (printPollInterval) clearTimeout(printPollInterval);
+    printPollInterval = setTimeout(pollPrintStatus, nextInterval);
+  } catch (e) {
+    printPollInterval = setTimeout(pollPrintStatus, 60000); // retry dans 1min si erreur
+  }
+}
+
+// Premier poll à 3s (laisse le temps à Bambu MQTT de recevoir le premier état)
+setTimeout(pollPrintStatus, 3000);

@@ -45,6 +45,7 @@ class Brain:
             )
             from modules.system.web import interactive_web_search, close_web_results
             from modules.system.monitor import get_system_health_report, get_heavy_processes
+            from modules.system.screenshot import analyze_screen
             from modules.services.calendar import calendar_service
             from modules.services.vision import vision_service
             from modules.services.gmail import gmail_service
@@ -57,6 +58,7 @@ class Brain:
                 get_bambu_status, get_bambu_progress,
                 pause_bambu, resume_bambu, stop_bambu
             )
+            from modules.memory.context import context_buffer
             
             # Mise à jour des instructions pour indiquer qu'il maîtrise les fenêtres et la correction STT
             self.system_instruction += (
@@ -110,8 +112,10 @@ class Brain:
                         get_printer_status, get_print_progress,
                         pause_print, resume_print, cancel_print, emergency_stop,
                         get_bambu_status, get_bambu_progress,
-                        pause_bambu, resume_bambu, stop_bambu
-                    ] # Injection des capacités système complètes
+                        pause_bambu, resume_bambu, stop_bambu,
+                        analyze_screen,
+                        context_buffer.get_suggestions
+                    ] # ~32 outils total
                 )
             )
             logger.info(f"Cerveau J.A.R.V.I.S initialisé avec {self.model_name} et les outils système avancés.")
@@ -169,6 +173,8 @@ class Brain:
             get_bambu_status, get_bambu_progress,
             pause_bambu, resume_bambu, stop_bambu
         )
+        from modules.system.screenshot import analyze_screen
+        from modules.memory.context import context_buffer
         
         # Dictionnaire manuel des outils disponibles (pour le mapping)
         tools_map = {
@@ -204,6 +210,8 @@ class Brain:
             "pause_bambu": pause_bambu,
             "resume_bambu": resume_bambu,
             "stop_bambu": stop_bambu,
+            "analyze_screen": analyze_screen,
+            "get_suggestions": context_buffer.get_suggestions,
         }
             
         main_loop = asyncio.get_running_loop()
@@ -221,7 +229,8 @@ class Brain:
             # Puisque tout s'est bien passé, on archive
             memory.store_message(role="user", content=text)
             memory.store_message(role="assistant", content=response.text)
-                        
+            # Enregistrement silencieux dans le buffer contextuel (pas de token)
+            context_buffer.record(action=text[:60], tool=None)
             return response.text
             
         return await asyncio.to_thread(blocking_call)
