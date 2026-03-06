@@ -1,18 +1,54 @@
-#api keys
+# --- SECRÉTS & CONFIG ---
 .env
 .env.*
-__pycache__
-.venv
-.vscode
-.idea
-#tout le dossier models
-models/
+*.json
+!package.json
+!package-lock.json
+!tsconfig.json
+!credentials.json.example
+# Protéger explicitement les fichiers Google Auth
+credentials.json
+token.json
+token_gmail.json
 
+# --- PYTHON ---
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.venv/
+venv/
+venv_jarvis/
+dist/
+build/
+*.spec
+
+# --- DATA & MODELS ---
+data/
+*.db
+*.db-journal
+*.db-wal
+models/
+models_backup/
 *.onnx
 *.bin
-__pycache__/
-.venv/
-# WhatsApp Bridge
+
+# --- NODE / FRONTEND ---
+node_modules/
 .wwebjs_cache/
+.wwebjs_auth/
+session/
 services/whatsapp_bridge/node_modules/
 services/whatsapp_bridge/session/
+
+# --- OS / IDE ---
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+*.log
+
+# --- BACKUPS ---
+web_backup/
+*_backup/
+mon lecteur/
