@@ -53,6 +53,10 @@ class Brain:
                 get_printer_status, get_print_progress,
                 pause_print, resume_print, cancel_print, emergency_stop
             )
+            from modules.services.bambu import (
+                get_bambu_status, get_bambu_progress,
+                pause_bambu, resume_bambu, stop_bambu
+            )
             
             # Mise à jour des instructions pour indiquer qu'il maîtrise les fenêtres et la correction STT
             self.system_instruction += (
@@ -100,7 +104,9 @@ class Brain:
                         gmail_service.get_unread_emails_summary, gmail_service.mark_email_as_read,
                         ha_service.get_entity_state, ha_service.call_service, ha_service.list_entities,
                         get_printer_status, get_print_progress,
-                        pause_print, resume_print, cancel_print, emergency_stop
+                        pause_print, resume_print, cancel_print, emergency_stop,
+                        get_bambu_status, get_bambu_progress,
+                        pause_bambu, resume_bambu, stop_bambu
                     ] # Injection des capacités système complètes
                 )
             )
@@ -155,6 +161,10 @@ class Brain:
             get_printer_status, get_print_progress,
             pause_print, resume_print, cancel_print, emergency_stop
         )
+        from modules.services.bambu import (
+            get_bambu_status, get_bambu_progress,
+            pause_bambu, resume_bambu, stop_bambu
+        )
         
         # Dictionnaire manuel des outils disponibles (pour le mapping)
         tools_map = {
@@ -184,6 +194,11 @@ class Brain:
             "resume_print": resume_print,
             "cancel_print": cancel_print,
             "emergency_stop": emergency_stop,
+            "get_bambu_status": get_bambu_status,
+            "get_bambu_progress": get_bambu_progress,
+            "pause_bambu": pause_bambu,
+            "resume_bambu": resume_bambu,
+            "stop_bambu": stop_bambu,
         }
             
         main_loop = asyncio.get_running_loop()

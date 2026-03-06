@@ -215,6 +215,9 @@ const haUrlInput = document.getElementById("ha-url");
 const haTokenInput = document.getElementById("ha-token");
 const saveModulesBtn = document.getElementById("save-modules-btn");
 const moonrakerUrlInput = document.getElementById("moonraker-url");
+const bambuIpInput = document.getElementById("bambu-ip");
+const bambuSerialInput = document.getElementById("bambu-serial");
+const bambuAccessCodeInput = document.getElementById("bambu-access-code");
 
 const testCameraBtn = document.getElementById("test-camera-btn");
 const cameraPreview = document.getElementById("camera-preview");
@@ -333,6 +336,9 @@ if (settingsBtn) {
         haUrlInput.value = data.ha_url || "";
         haTokenInput.value = data._raw_ha_token || "";
         moonrakerUrlInput.value = data.moonraker_url || "";
+        if (bambuIpInput) bambuIpInput.value = data.bambu_ip || "";
+        if (bambuSerialInput) bambuSerialInput.value = data.bambu_serial || "";
+        // On ne recharge pas l'access code pour la sécurité
 
         // 2. Charger et sélectionner voix
         await loadVoices(data.kokoro_voice);
@@ -374,6 +380,9 @@ async function saveAllSettings() {
     ha_url: haUrlInput.value,
     ha_token: haTokenInput.value,
     moonraker_url: moonrakerUrlInput ? moonrakerUrlInput.value : "",
+    bambu_ip: bambuIpInput ? bambuIpInput.value : "",
+    bambu_serial: bambuSerialInput ? bambuSerialInput.value : "",
+    bambu_access_code: bambuAccessCodeInput ? bambuAccessCodeInput.value : "",
   };
 
   try {

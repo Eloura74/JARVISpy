@@ -6,4 +6,4 @@ __pycache__
 .vscode
 .idea
 #tout le dossier models
-models
+models/

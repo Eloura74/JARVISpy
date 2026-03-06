@@ -19,6 +19,9 @@ class SettingsUpdateModel(BaseModel):
     ha_url: str
     ha_token: str
     moonraker_url: str
+    bambu_ip: str
+    bambu_serial: str
+    bambu_access_code: str
 
 @router.get("/api/settings")
 async def get_current_settings():
@@ -38,6 +41,8 @@ async def get_current_settings():
         "ha_url": settings.ha_url,
         "ha_token": ha_token_masked,
         "moonraker_url": settings.moonraker_url,
+        "bambu_ip": settings.bambu_ip,
+        "bambu_serial": settings.bambu_serial,
         # Versions brutes
         "_raw_gemini": settings.gemini_api_key,
         "_raw_tavily": settings.tavily_api_key,
@@ -89,6 +94,14 @@ async def update_settings(update_data: SettingsUpdateModel):
 
         dotenv.set_key(env_path, "MOONRAKER_URL", update_data.moonraker_url)
         settings.moonraker_url = update_data.moonraker_url
+
+        dotenv.set_key(env_path, "BAMBU_IP", update_data.bambu_ip)
+        settings.bambu_ip = update_data.bambu_ip
+        dotenv.set_key(env_path, "BAMBU_SERIAL", update_data.bambu_serial)
+        settings.bambu_serial = update_data.bambu_serial
+        if update_data.bambu_access_code and "..." not in update_data.bambu_access_code:
+            dotenv.set_key(env_path, "BAMBU_ACCESS_CODE", update_data.bambu_access_code)
+            settings.bambu_access_code = update_data.bambu_access_code
 
         return {"status": "success", "message": "Paramètres sauvegardés avec succès. Redémarrage du serveur conseillé pour les clés."}
     except Exception as e:
