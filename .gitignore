@@ -7,3 +7,8 @@ __pycache__
 .idea
 #tout le dossier models
 models/
+
+*.onnx
+*.bin
+__pycache__/
+.venv/
