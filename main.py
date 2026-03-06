@@ -61,7 +61,15 @@ def setup_modules():
     tts_instance.start()
     stt_instance.start()
     
+    # ESP32-S3 sphère physique (optionnel — se désactive si non branché)
+    try:
+        from modules.hardware.esp_sphere import esp_sphere
+        esp_sphere.start()
+    except Exception as e:
+        logger.warning(f"Module ESP32-S3 non chargé: {e}")
+    
     logger.info("Modules fonctionnels chargés.")
+
 
 def start_whatsapp_bridge():
     """Démarre le bridge WhatsApp Node.js en sous-processus silencieux (sans fenêtre)."""
