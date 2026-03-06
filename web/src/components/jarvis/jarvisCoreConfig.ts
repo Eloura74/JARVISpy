@@ -6,7 +6,7 @@ export const JARVIS_COLORS: Record<JarvisMode, THREE.Color> = {
   idle: new THREE.Color("#00d9ff"),
   listening: new THREE.Color("#2affb9"),
   thinking: new THREE.Color("#69a8ff"),
-  speaking: new THREE.Color("#e8fdff"),
+  speaking: new THREE.Color("#b06eff"), // Violet Jarvis V3
 };
 
 export const CORE_CONFIG = {

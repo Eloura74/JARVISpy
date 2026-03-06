@@ -32,10 +32,12 @@ export const JarvisCore: React.FC<JarvisCoreProps> = ({ mode, size = 540 }) => {
 
   useEffect(() => {
     // Souscription directe au store pour l'audio (60fps sans re-render)
-    const unsubscribe = store.subscribe((state) => {
+    const unsubscribe = store.subscribe((state: any) => {
       audioLevelRef.current = state.audioLevel || 0;
     });
-    return unsubscribe;
+    return () => {
+      unsubscribe();
+    };
   }, []);
 
   useEffect(() => {

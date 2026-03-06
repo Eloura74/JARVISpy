@@ -73,8 +73,13 @@ class WebSocketService {
       case "brain.thinking":
         store.setState({
           brainStatus: data.status ? "Analyse..." : "En veille",
-          orbStatus: data.status ? "thinking" : "idle",
         });
+        // Ne repasser en idle que si on était en train de réfléchir
+        if (data.status) {
+          store.setState({ orbStatus: "thinking" });
+        } else if (store.state.orbStatus === "thinking") {
+          store.setState({ orbStatus: "idle" });
+        }
         break;
       case "brain.response_generated":
         store.setState({ lastJarvisMessage: data.text });
@@ -83,8 +88,13 @@ class WebSocketService {
         store.setState({ ttsStatus: "Actif", orbStatus: "speaking" });
         break;
       case "audio.tts_stopped":
-        store.setState({ ttsStatus: "Inactif", orbStatus: "idle" });
+        store.setState({ ttsStatus: "Inactif" });
+        // On ne repasse en idle que si on est en train de parler
+        if (store.state.orbStatus === "speaking") {
+          store.setState({ orbStatus: "idle" });
+        }
         break;
+
       case "ui.show_web_results":
         store.setState({ webSearchResults: data });
         break;
