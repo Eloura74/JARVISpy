@@ -89,6 +89,7 @@ def start_whatsapp_bridge():
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,
             text=True,
+            encoding="utf-8",
             creationflags=flags,
         )
         
