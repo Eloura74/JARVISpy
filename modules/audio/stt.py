@@ -62,7 +62,20 @@ class SpeechToText:
             
             text = "".join([segment.text for segment in segments]).strip()
             
-            if not text:
+            # Filtrage des hallucinations connues de Whisper (sur du silence)
+            hallucinations = [
+                "sous-titres réalisés",
+                "amara.org",
+                "merci de votre attention",
+                "sous-titrage",
+            ]
+            text_lower = text.lower()
+            if any(h in text_lower for h in hallucinations):
+                logger.debug(f"Hallucination Whisper ignorée: '{text}'")
+                return
+            
+            # Éviter les bruits très courts
+            if not text or len(text) < 2:
                 return
                 
             logger.info(f"Reconnu : '{text}'")

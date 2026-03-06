@@ -22,6 +22,9 @@ class SettingsUpdateModel(BaseModel):
     bambu_ip: str
     bambu_serial: str
     bambu_access_code: str
+    toast_enabled: str
+    wa_default_phone: str
+    wa_notify_on_alerts: str
 
 @router.get("/api/settings")
 async def get_current_settings():
@@ -43,6 +46,9 @@ async def get_current_settings():
         "moonraker_url": settings.moonraker_url,
         "bambu_ip": settings.bambu_ip,
         "bambu_serial": settings.bambu_serial,
+        "toast_enabled": settings.toast_enabled,
+        "wa_default_phone": settings.wa_default_phone,
+        "wa_notify_on_alerts": settings.wa_notify_on_alerts,
         # Versions brutes
         "_raw_gemini": settings.gemini_api_key,
         "_raw_tavily": settings.tavily_api_key,
@@ -102,6 +108,13 @@ async def update_settings(update_data: SettingsUpdateModel):
         if update_data.bambu_access_code and "..." not in update_data.bambu_access_code:
             dotenv.set_key(env_path, "BAMBU_ACCESS_CODE", update_data.bambu_access_code)
             settings.bambu_access_code = update_data.bambu_access_code
+
+        dotenv.set_key(env_path, "TOAST_ENABLED", update_data.toast_enabled)
+        settings.toast_enabled = update_data.toast_enabled
+        dotenv.set_key(env_path, "WA_DEFAULT_PHONE", update_data.wa_default_phone)
+        settings.wa_default_phone = update_data.wa_default_phone
+        dotenv.set_key(env_path, "WA_NOTIFY_ON_ALERTS", update_data.wa_notify_on_alerts)
+        settings.wa_notify_on_alerts = update_data.wa_notify_on_alerts
 
         return {"status": "success", "message": "Paramètres sauvegardés avec succès. Redémarrage du serveur conseillé pour les clés."}
     except Exception as e:

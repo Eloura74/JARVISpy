@@ -12,3 +12,7 @@ models/
 *.bin
 __pycache__/
 .venv/
+# WhatsApp Bridge
+.wwebjs_cache/
+services/whatsapp_bridge/node_modules/
+services/whatsapp_bridge/session/

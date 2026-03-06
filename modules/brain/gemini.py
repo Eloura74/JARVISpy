@@ -59,6 +59,7 @@ class Brain:
                 pause_bambu, resume_bambu, stop_bambu
             )
             from modules.memory.context import context_buffer
+            from modules.notifications.whatsapp import send_whatsapp, get_whatsapp_status
             
             # Mise à jour des instructions pour indiquer qu'il maîtrise les fenêtres et la correction STT
             self.system_instruction += (
@@ -70,7 +71,10 @@ class Brain:
                 "S'il demande explicitement 'Windsurf', n'essaie pas de le corriger par WindTerm, passe bien la chaîne 'Windsurf'.\n"
                 "HOME ASSISTANT: NEVER guess an entity_id. ALWAYS call search_entities_by_name first with the "
                 "user's natural language keywords (in French, no special chars). "
-                "Inspect the search results, pick the entity_id with the highest score, then call get_entity_state or call_service."
+                "Inspect the search results, pick the entity_id with the highest score, then call get_entity_state or call_service.\n"
+                "WHATSAPP: quand l'utilisateur dit 'envoie un message/WhatsApp à [NOM]', appelle IMMÉDIATEMENT "
+                "send_whatsapp(to='[NOM]', message='...') sans jamais demander de numéro. "
+                "Le système résout le contact automatiquement. Si le message n'est pas précisé, demande-le."
             )
             
             # Récupération dynamique des faits pour le prompt système
@@ -114,8 +118,9 @@ class Brain:
                         get_bambu_status, get_bambu_progress,
                         pause_bambu, resume_bambu, stop_bambu,
                         analyze_screen,
-                        context_buffer.get_suggestions
-                    ] # ~32 outils total
+                        context_buffer.get_suggestions,
+                        send_whatsapp, get_whatsapp_status
+                    ] # ~34 outils total
                 )
             )
             logger.info(f"Cerveau J.A.R.V.I.S initialisé avec {self.model_name} et les outils système avancés.")
@@ -175,6 +180,7 @@ class Brain:
         )
         from modules.system.screenshot import analyze_screen
         from modules.memory.context import context_buffer
+        from modules.notifications.whatsapp import send_whatsapp, get_whatsapp_status
         
         # Dictionnaire manuel des outils disponibles (pour le mapping)
         tools_map = {
@@ -212,6 +218,8 @@ class Brain:
             "stop_bambu": stop_bambu,
             "analyze_screen": analyze_screen,
             "get_suggestions": context_buffer.get_suggestions,
+            "send_whatsapp": send_whatsapp,
+            "get_whatsapp_status": get_whatsapp_status,
         }
             
         main_loop = asyncio.get_running_loop()

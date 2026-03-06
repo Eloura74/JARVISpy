@@ -7,6 +7,8 @@ const { Client, LocalAuth, MessageMedia } = require("whatsapp-web.js");
 const express = require("express");
 const qrcode = require("qrcode");
 const qrcodeTerminal = require("qrcode-terminal");
+const path = require("path");
+const fs = require("fs");
 
 const app = express();
 app.use(express.json());
@@ -19,8 +21,19 @@ let isConnected = false;
 const recentMessages = []; // Buffer des 20 derniers messages reçus
 
 // ── Client WhatsApp ──────────────────────────────────────────────────────────
+const SESSION_PATH = path.join(__dirname, "session"); // Chemin absolu, indépendant du CWD
+const LOG_FILE = path.join(__dirname, "bridge.log");
+
+function log(msg) {
+  const line = `[${new Date().toISOString().slice(11, 19)}] ${msg}\n`;
+  process.stdout.write(line);
+  try {
+    fs.appendFileSync(LOG_FILE, line);
+  } catch (_) {}
+}
+
 const client = new Client({
-  authStrategy: new LocalAuth({ dataPath: "./session" }),
+  authStrategy: new LocalAuth({ dataPath: SESSION_PATH }),
   puppeteer: {
     headless: true,
     args: [
@@ -34,21 +47,19 @@ const client = new Client({
 client.on("qr", async (qr) => {
   qrCodeData = await qrcode.toDataURL(qr);
   qrcodeTerminal.generate(qr, { small: true });
-  console.log("[JARVIS WA] QR Code généré — scannez avec votre téléphone.");
-  console.log(
-    `[JARVIS WA] Ou ouvrez http://localhost:${PORT}/qr dans le navigateur.`,
-  );
+  log("QR Code généré — scannez avec votre téléphone.");
+  log(`Ou ouvrez http://localhost:${PORT}/qr dans le navigateur.`);
 });
 
 client.on("ready", () => {
   isConnected = true;
   qrCodeData = null;
-  console.log("[JARVIS WA] ✅ WhatsApp connecté et prêt.");
+  log("✅ WhatsApp connecté et prêt.");
 });
 
 client.on("disconnected", (reason) => {
   isConnected = false;
-  console.log(`[JARVIS WA] ⚠️ Déconnecté: ${reason}`);
+  log(`⚠️ Déconnecté: ${reason}`);
 });
 
 client.on("message", async (msg) => {
@@ -64,7 +75,7 @@ client.on("message", async (msg) => {
   };
   recentMessages.unshift(entry);
   if (recentMessages.length > 20) recentMessages.pop();
-  console.log(`[JARVIS WA] 📩 Message de ${entry.name}: ${entry.body}`);
+  log(`📩 Message de ${entry.name}: ${entry.body}`);
 
   // Transmission à JARVIS pour notification + lecture vocale
   try {

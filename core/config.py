@@ -26,6 +26,10 @@ class Settings(BaseSettings):
     bambu_ip: str = ""
     bambu_serial: str = ""
     bambu_access_code: str = ""
+    # Notifications
+    toast_enabled: str = "true"
+    wa_default_phone: str = ""
+    wa_notify_on_alerts: str = "false"
     
     # Base de données
     db_path: str = "data/jarvis.db"

@@ -1,5 +1,7 @@
 import asyncio
 import threading
+import subprocess
+import os
 import time
 import uvicorn
 from typing import Dict, Any
@@ -53,6 +55,44 @@ def setup_modules():
     
     logger.info("Modules fonctionnels chargés.")
 
+def start_whatsapp_bridge():
+    """Démarre le bridge WhatsApp Node.js en sous-processus silencieux (sans fenêtre)."""
+    bridge_dir = os.path.join(
+        os.path.dirname(os.path.abspath(__file__)),
+        "services", "whatsapp_bridge"
+    )
+    bridge_script = os.path.join(bridge_dir, "index.js")
+    if not os.path.exists(bridge_script):
+        logger.debug("Bridge WhatsApp non trouvé, skip.")
+        return None
+    try:
+        flags = subprocess.CREATE_NO_WINDOW if os.name == "nt" else 0
+        proc = subprocess.Popen(
+            ["node", bridge_script],
+            cwd=bridge_dir,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            text=True,
+            creationflags=flags,
+        )
+        
+        # Thread pour lire les logs du bridge et les afficher dans la console JARVIS
+        def stream_logs(process):
+            for line in iter(process.stdout.readline, ''):
+                if line:
+                    logger.info(f"WA Bridge | {line.strip()}")
+            process.stdout.close()
+            
+        threading.Thread(target=stream_logs, args=(proc,), daemon=True).start()
+        
+        logger.info(f"Bridge WhatsApp auto-démarré (PID {proc.pid}).")
+        return proc
+    except FileNotFoundError:
+        logger.warning("Node.js introuvable — bridge WhatsApp non démarré.")
+    except Exception as e:
+        logger.error(f"Bridge WhatsApp: {e}")
+    return None
+
 async def main():
     logger.info(f"========== Démarrage de {settings.app_name} ==========")
     logger.info(f"Environnement: {settings.environment}")
@@ -70,12 +110,19 @@ async def main():
     api_thread = threading.Thread(target=run_api_server, daemon=True)
     api_thread.start()
     
+    # Démarrage automatique du bridge WhatsApp (sous-processus silencieux)
+    start_whatsapp_bridge()
+    
     # Initialisation des différents modules de l'assistant
     setup_modules()
     
     # Démarrage du système d'alertes proactives (asyncio, non-bloquant, 0 token Gemini)
     from modules.alerts import start_all_monitors
     start_all_monitors()
+    
+    # Démarrage du gestionnaire de notifications (Toast + WhatsApp)
+    from modules.notifications import start as start_notifications
+    start_notifications()
     
     # Laisser un peu de temps au serveur pour démarrer
     await asyncio.sleep(1)

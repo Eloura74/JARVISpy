@@ -218,6 +218,11 @@ const moonrakerUrlInput = document.getElementById("moonraker-url");
 const bambuIpInput = document.getElementById("bambu-ip");
 const bambuSerialInput = document.getElementById("bambu-serial");
 const bambuAccessCodeInput = document.getElementById("bambu-access-code");
+const toastEnabledInput = document.getElementById("toast-enabled");
+const waDefaultPhoneInput = document.getElementById("wa-default-phone");
+const waNotifyAlertsInput = document.getElementById("wa-notify-on-alerts");
+const waQrBtn = document.getElementById("wa-qr-btn");
+const waStatusBadge = document.getElementById("wa-status-badge");
 
 const testCameraBtn = document.getElementById("test-camera-btn");
 const cameraPreview = document.getElementById("camera-preview");
@@ -339,6 +344,12 @@ if (settingsBtn) {
         if (bambuIpInput) bambuIpInput.value = data.bambu_ip || "";
         if (bambuSerialInput) bambuSerialInput.value = data.bambu_serial || "";
         // On ne recharge pas l'access code pour la sécurité
+        if (toastEnabledInput)
+          toastEnabledInput.checked = data.toast_enabled === "true";
+        if (waDefaultPhoneInput)
+          waDefaultPhoneInput.value = data.wa_default_phone || "";
+        if (waNotifyAlertsInput)
+          waNotifyAlertsInput.checked = data.wa_notify_on_alerts === "true";
 
         // 2. Charger et sélectionner voix
         await loadVoices(data.kokoro_voice);
@@ -383,6 +394,17 @@ async function saveAllSettings() {
     bambu_ip: bambuIpInput ? bambuIpInput.value : "",
     bambu_serial: bambuSerialInput ? bambuSerialInput.value : "",
     bambu_access_code: bambuAccessCodeInput ? bambuAccessCodeInput.value : "",
+    toast_enabled: toastEnabledInput
+      ? toastEnabledInput.checked
+        ? "true"
+        : "false"
+      : "true",
+    wa_default_phone: waDefaultPhoneInput ? waDefaultPhoneInput.value : "",
+    wa_notify_on_alerts: waNotifyAlertsInput
+      ? waNotifyAlertsInput.checked
+        ? "true"
+        : "false"
+      : "false",
   };
 
   try {
@@ -589,3 +611,35 @@ async function pollPrintStatus() {
 
 // Premier poll à 3s (laisse le temps à Bambu MQTT de recevoir le premier état)
 setTimeout(pollPrintStatus, 3000);
+
+// --- WHATSAPP BRIDGE STATUS + QR ---
+async function checkWaBridgeStatus() {
+  if (!waStatusBadge) return;
+  try {
+    const r = await fetch("http://localhost:3001/status");
+    if (!r.ok) throw new Error();
+    const d = await r.json();
+    if (d.connected) {
+      waStatusBadge.textContent = "✅ WhatsApp connecté";
+      waStatusBadge.style.color = "#4caf50";
+    } else if (d.qr_available) {
+      waStatusBadge.textContent = "📱 QR disponible — scannez !";
+      waStatusBadge.style.color = "#ff9800";
+    } else {
+      waStatusBadge.textContent = "⏳ Bridge démarré, en attente...";
+      waStatusBadge.style.color = "#aaa";
+    }
+  } catch {
+    waStatusBadge.textContent = "Bridge non démarré";
+    waStatusBadge.style.color = "#777";
+  }
+}
+
+if (waQrBtn) {
+  waQrBtn.addEventListener("click", () => {
+    window.open("http://localhost:3001/qr", "_blank", "width=360,height=420");
+  });
+}
+
+// Vérif statut WA toutes les 10s quand les paramètres sont ouverts
+setInterval(checkWaBridgeStatus, 10000);

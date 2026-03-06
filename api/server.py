@@ -11,6 +11,7 @@ from core.logger import get_logger
 from core.event_bus import bus
 from api.routes.settings import router as settings_router
 from api.routes.print_status import router as print_status_router
+from api.routes.wa_webhook import router as wa_webhook_router
 
 logger = get_logger("api.server")
 
@@ -23,6 +24,7 @@ app = FastAPI(
 # Inclusion des routeurs
 app.include_router(settings_router)
 app.include_router(print_status_router)
+app.include_router(wa_webhook_router)
 
 # Configuration CORS pour permettre aux interfaces web de se connecter
 app.add_middleware(
