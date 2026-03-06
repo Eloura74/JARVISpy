@@ -62,20 +62,35 @@ class SpeechToText:
             
             text = "".join([segment.text for segment in segments]).strip()
             
-            # Filtrage des hallucinations connues de Whisper (sur du silence)
+            # Filtrage des hallucinations connues de Whisper (sur du silence / bruit)
+            text_lower = text.lower()
+            
+            # Si le texte est très court ou est juste un caractère de ponctuation
+            if not text or len(text.strip(" .!?,")) < 2:
+                return
+
             hallucinations = [
-                "sous-titres réalisés",
+                "sous-titres",
                 "amara.org",
                 "merci de votre attention",
                 "sous-titrage",
+                "merci d'avoir regardé",
+                "n'hésitez pas à vous abonner",
+                "ouvres crônes",
+                "c'est non plus dur",
+                "traduction "
             ]
-            text_lower = text.lower()
-            if any(h in text_lower for h in hallucinations):
+            
+            # Vérification stricte: on ignore si le texte contient une hallucination connue
+            # OU si c'est juste "merci" (souvent une hallucination sur un bruit très bref)
+            if any(h in text_lower for h in hallucinations) or text_lower.strip(" .!,?") == "merci":
                 logger.debug(f"Hallucination Whisper ignorée: '{text}'")
                 return
-            
-            # Éviter les bruits très courts
-            if not text or len(text) < 2:
+                
+            # Détection d'erreurs de répétition infinie de Whisper (bégaiement)
+            words = text_lower.split()
+            if len(words) > 4 and len(set(words)) == 1:
+                logger.debug(f"Bégaiement Whisper ignoré: '{text}'")
                 return
                 
             logger.info(f"Reconnu : '{text}'")
@@ -106,13 +121,19 @@ class SpeechToText:
             logger.info("Module STT (Écoute) actif. Parlez !")
         self.is_listening = True
         
-        # Lancement de l'écoute asynchrone native de speech_recognition
-        # Cela lance son propre thread interne.
-        self.stop_listening_fn = self.recognizer.listen_in_background(
-            self.microphone, 
-            self._callback,
-            phrase_time_limit=10 # Coupe si on parle plus de 10s non-stop
-        )
+        # Lancement de l'écoute asynchrone avec Retry (pour éviter AssertionError si le thread précédent nettoie encore)
+        for attempt in range(10):
+            try:
+                self.stop_listening_fn = self.recognizer.listen_in_background(
+                    self.microphone, 
+                    self._callback,
+                    phrase_time_limit=10 # Coupe si on parle plus de 10s non-stop
+                )
+                break
+            except AssertionError as e:
+                if attempt == 9:
+                    logger.error(f"Impossible de démarrer l'écoute (Microphone bloqué): {e}")
+                time.sleep(0.2)
 
     def stop(self, is_temporary=False):
         """Arrête l'écoute du micro"""
