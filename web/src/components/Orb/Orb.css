@@ -1,180 +1,277 @@
-.orb-visualizer {
+/* ============================================================
+   ORB — Hologramme 3D + Particules CSS
+   ============================================================ */
+
+.orb-scene {
   position: relative;
   width: 100%;
   height: 100%;
   display: flex;
-  justify-content: center;
   align-items: center;
-}
-
-.hud-box {
-  position: relative;
-  display: flex;
   justify-content: center;
-  align-items: center;
+  overflow: hidden;
+
+  /* États par défaut */
+  --clr-h: 200; /* Teinte (0–360) */
+  --clr-s: 100%; /* Saturation */
+  --clr-l: 50%; /* Luminosité */
+  --orb-speed: 1;
 }
 
-.orb-svg {
-  width: 600px;
-  height: 600px;
-  filter: drop-shadow(0 0 20px var(--primary-glow));
+/* ── ÉTATS : palette & vitesse ── */
+[data-status="idle"] {
+  --clr-h: 200;
+  --clr-s: 80%;
+  --clr-l: 48%;
+  --orb-speed: 1;
+}
+[data-status="listening"] {
+  --clr-h: 155;
+  --clr-s: 100%;
+  --clr-l: 45%;
+  --orb-speed: 2.5;
+}
+[data-status="thinking"] {
+  --clr-h: 275;
+  --clr-s: 100%;
+  --clr-l: 55%;
+  --orb-speed: 1.8;
+}
+[data-status="speaking"] {
+  --clr-h: 35;
+  --clr-s: 100%;
+  --clr-l: 52%;
+  --orb-speed: 4;
 }
 
-/* Animations */
-.tech-ring.outer-slow {
-  animation: spin 40s linear infinite;
-  transform-origin: center;
+/* ── GRILLE HEX HOLOGRAMME ── */
+.orb-hex-grid {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0.6;
+  /* La couleur de stroke est dans le SVG via CSS var — doit s'animer avec l'état */
+  transition: filter 0.8s ease;
 }
 
-.tech-ring.middle-fast {
-  animation: spin 15s linear infinite;
-  transform-origin: center;
+[data-status="listening"] .orb-hex-grid {
+  filter: hue-rotate(-45deg);
+}
+[data-status="thinking"] .orb-hex-grid {
+  filter: hue-rotate(-155deg);
+}
+[data-status="speaking"] .orb-hex-grid {
+  filter: hue-rotate(165deg);
 }
 
-.tech-ring.inner-reverse {
-  animation: spin-reverse 25s linear infinite;
-  transform-origin: center;
+/* ── PARTICULES FLOTTANTES ── */
+.orb-particles {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 2;
 }
 
-.target-crosshair {
-  animation: pulse-opacity 4s ease-in-out infinite;
-  transform-origin: center;
+.orb-particle {
+  position: absolute;
+  border-radius: 50%;
+  background: hsl(var(--clr-h), var(--clr-s), 70%);
+  box-shadow: 0 0 6px 2px hsl(var(--clr-h), 100%, 65%, 0.6);
+  animation: particle-float linear infinite;
+  will-change: transform, opacity;
+  transition:
+    background 0.8s ease,
+    box-shadow 0.8s ease;
 }
 
-@keyframes spin {
+@keyframes particle-float {
+  0% {
+    transform: translate(0, 0) scale(1);
+    opacity: var(--p-opacity, 0.4);
+  }
+  50% {
+    transform: translate(calc(var(--drift-x) * 0.5), calc(var(--drift-y) * 0.5))
+      scale(1.3);
+    opacity: calc(var(--p-opacity, 0.4) * 1.5);
+  }
   100% {
+    transform: translate(var(--drift-x), var(--drift-y)) scale(0.5);
+    opacity: 0;
+  }
+}
+
+/* ── ANNEAUX D'ÉMANATION ── */
+.emanation-ring {
+  position: absolute;
+  border-radius: 50%;
+  border: 1px solid hsl(var(--clr-h), var(--clr-s), 65%, 0.5);
+  pointer-events: none;
+  z-index: 3;
+  transition: border-color 0.6s ease;
+}
+
+.e-ring-1 {
+  animation: emanate 3s ease-out infinite;
+}
+.e-ring-2 {
+  animation: emanate 3s ease-out infinite 1s;
+}
+.e-ring-3 {
+  animation: emanate 3s ease-out infinite 2s;
+}
+
+@keyframes emanate {
+  0% {
+    width: 180px;
+    height: 180px;
+    opacity: 0.6;
+  }
+  100% {
+    width: 450px;
+    height: 450px;
+    opacity: 0;
+  }
+}
+
+/* ── SVG HOLOGRAMME ── */
+.orb-holo-svg {
+  position: relative;
+  z-index: 10;
+  width: min(520px, 80vh);
+  height: min(520px, 80vh);
+  filter: drop-shadow(0 0 18px hsl(var(--clr-h), 100%, 55%, 0.35));
+  transition: filter 0.6s ease;
+}
+
+[data-status="listening"] .orb-holo-svg {
+  filter: drop-shadow(0 0 28px hsl(155, 100%, 50%, 0.5));
+}
+[data-status="thinking"] .orb-holo-svg {
+  filter: drop-shadow(0 0 24px hsl(275, 100%, 60%, 0.5));
+}
+[data-status="speaking"] .orb-holo-svg {
+  filter: drop-shadow(0 0 35px hsl(35, 100%, 55%, 0.6));
+}
+
+/* ── ANNEAUX ROTATIFS SVG ── */
+.ring-outer {
+  animation: spin-cw calc(30s / var(--orb-speed)) linear infinite;
+  transform-origin: 250px 250px;
+  transition: animation-duration 0.8s;
+}
+.ring-mid {
+  animation: spin-cw calc(8s / var(--orb-speed)) linear infinite;
+  transform-origin: 250px 250px;
+}
+.ring-inner {
+  animation: spin-ccw calc(12s / var(--orb-speed)) linear infinite;
+  transform-origin: 250px 250px;
+}
+
+@keyframes spin-cw {
+  to {
     transform: rotate(360deg);
   }
 }
-@keyframes spin-reverse {
-  100% {
+@keyframes spin-ccw {
+  to {
     transform: rotate(-360deg);
   }
 }
-@keyframes pulse-opacity {
-  0%,
-  100% {
-    opacity: 0.1;
-  }
-  50% {
-    opacity: 0.25;
-  }
+
+/* ── CORE (sphère SVG) ── */
+.orb-core-circle {
+  animation: orb-breathe 4s ease-in-out infinite;
+  transform-origin: 250px 250px;
+  transition: filter 0.6s ease;
 }
 
-/* Core Element */
-.orb-core {
-  transform-origin: center;
-  transition: all 0.5s ease-out;
-}
-
-/* Core Shield */
-.core-shield {
-  transform-origin: center;
-  animation: spin 10s linear infinite;
-}
-
-/* Label */
-.orb-label {
-  position: absolute;
-  bottom: 0%;
-  left: 50%;
-  transform: translateX(-50%);
-  font-family: var(--font-tech);
-  font-size: 0.85rem;
-  color: #fff;
-  text-shadow: 0 0 5px var(--primary);
-  letter-spacing: 8px;
-  opacity: 0.85;
-  white-space: nowrap;
-  background: hsla(var(--hue-primary), 20%, 3%, 0.7);
-  padding: 6px 24px;
-  border-radius: 4px;
-  border: 1px solid var(--glass-border);
-  backdrop-filter: blur(10px);
-  text-transform: uppercase;
-  z-index: 10;
-  box-shadow:
-    0 5px 15px rgba(0, 0, 0, 0.8),
-    inset 0 0 10px rgba(255, 255, 255, 0.02);
-}
-
-/* Status States */
-.orb-svg[data-status="idle"] .orb-core {
-  animation: float-pulse 5s ease-in-out infinite;
-}
-
-.orb-svg[data-status="listening"] .orb-core {
-  fill: url(#plasma-core);
-  filter: drop-shadow(0 0 30px var(--success)) brightness(1.2) sepia(0.8)
-    hue-rotate(-50deg) saturate(1.5);
-  transform: scale(1.1);
-  animation: pulse-fast 1.5s ease-in-out infinite;
-}
-
-.orb-svg[data-status="listening"] .tech-ring.middle-fast {
-  filter: sepia(0.8) hue-rotate(-50deg) saturate(1.5);
-}
-
-.orb-svg[data-status="thinking"] .orb-core {
-  filter: drop-shadow(0 0 25px var(--accent)) brightness(1.1) sepia(0.8)
-    hue-rotate(-150deg) saturate(1.5);
-  animation: pulse-data 1s ease-in-out infinite alternate;
-}
-
-.orb-svg[data-status="thinking"] .tech-ring.inner-reverse {
-  animation-duration: 6s;
-  filter: sepia(0.8) hue-rotate(-150deg) saturate(1.5);
-}
-
-.orb-svg[data-status="speaking"] .orb-core {
-  animation: speaker-pulse 0.25s ease-in-out infinite alternate;
-}
-
-.orb-svg[data-status="speaking"] .tech-ring.outer-slow {
-  animation-duration: 5s;
-}
-
-@keyframes float-pulse {
+@keyframes orb-breathe {
   0%,
   100% {
     transform: scale(1);
-    opacity: 0.9;
   }
   50% {
     transform: scale(1.04);
-    opacity: 1;
   }
 }
 
-@keyframes pulse-fast {
+[data-status="listening"] .orb-core-circle {
+  animation: orb-breathe 1.5s ease-in-out infinite;
+}
+[data-status="speaking"] .orb-core-circle {
+  animation: orb-breathe 0.35s ease-in-out infinite alternate;
+}
+
+/* ── HUD CLIGNOTANT ── */
+.hud-blink {
+  animation: hud-blink 2s ease-in-out infinite;
+}
+@keyframes hud-blink {
   0%,
   100% {
-    transform: scale(1.05);
+    opacity: 0.7;
   }
   50% {
-    transform: scale(1.15);
+    opacity: 0.2;
   }
 }
 
-@keyframes pulse-data {
+/* ── SCAN GRID (lignes horizontales hologramme) ── */
+.scan-grid {
+  animation: scan-move 6s linear infinite;
+}
+@keyframes scan-move {
   0% {
-    transform: scale(0.98);
-    opacity: 0.85;
+    transform: translateY(0);
+    opacity: 0.18;
+  }
+  50% {
+    transform: translateY(15px);
+    opacity: 0.08;
   }
   100% {
-    transform: scale(1.05);
-    opacity: 1;
-    filter: drop-shadow(0 0 30px var(--accent)) brightness(1.2);
+    transform: translateY(0);
+    opacity: 0.18;
   }
 }
 
-@keyframes speaker-pulse {
-  0% {
-    transform: scale(1);
-    filter: drop-shadow(0 0 20px var(--primary));
-  }
+/* ── LIGNES HUD ── */
+.hud-lines {
+  animation: hud-fade 3s ease-in-out infinite;
+}
+@keyframes hud-fade {
+  0%,
   100% {
-    transform: scale(1.15);
-    filter: drop-shadow(0 0 45px var(--primary)) brightness(1.2);
+    opacity: 0.7;
   }
+  50% {
+    opacity: 0.4;
+  }
+}
+
+/* ── ÉTIQUETTE ÉTAT ── */
+.orb-label {
+  position: absolute;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-family: var(--font-tech);
+  font-size: 0.78rem;
+  color: hsl(var(--clr-h), 70%, 75%);
+  letter-spacing: 6px;
+  text-transform: uppercase;
+  white-space: nowrap;
+  text-shadow: 0 0 12px hsl(var(--clr-h), 100%, 65%, 0.8);
+  background: rgba(0, 0, 0, 0.45);
+  border: 1px solid hsl(var(--clr-h), 60%, 50%, 0.3);
+  padding: 6px 22px;
+  border-radius: 3px;
+  backdrop-filter: blur(8px);
+  z-index: 20;
+  transition:
+    color 0.6s ease,
+    text-shadow 0.6s ease,
+    border-color 0.6s ease;
 }
