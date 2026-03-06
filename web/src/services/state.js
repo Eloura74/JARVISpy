@@ -12,6 +12,7 @@ class StateStore {
       lastUserMessage: "",
       lastJarvisMessage: "",
       activeTab: "general",
+      webSearchResults: null, // { query, results: [] }
       printData: {
         bambu: null,
         moonraker: null,

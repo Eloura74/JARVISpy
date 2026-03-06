@@ -47,7 +47,7 @@ class Brain:
                 get_system_time, get_battery_status,
                 list_directory, read_file, write_to_file, open_file_or_url
             )
-            from modules.system.web import interactive_web_search, close_web_results
+            from modules.system.web import interactive_web_search, close_web_results, direct_google_search
             from modules.system.monitor import get_system_health_report, get_heavy_processes
             from modules.system.screenshot import analyze_screen
             from modules.services.calendar import calendar_service
@@ -113,7 +113,7 @@ class Brain:
                         find_and_launch_app, close_application, manage_window_state, move_window_to_screen,
                         get_system_time, get_battery_status,
                         list_directory, read_file, write_to_file,
-                        open_file_or_url, interactive_web_search, close_web_results,
+                        open_file_or_url, interactive_web_search, close_web_results, direct_google_search,
                         remember_info, forget_info,
                         get_system_health_report, get_heavy_processes,
                         calendar_service.get_upcoming_events, calendar_service.create_event,
@@ -177,7 +177,7 @@ class Brain:
             get_system_time, get_battery_status,
             list_directory, read_file, write_to_file, open_file_or_url
         )
-        from modules.system.web import interactive_web_search, close_web_results
+        from modules.system.web import interactive_web_search, close_web_results, direct_google_search
         from modules.services.calendar import calendar_service
         from modules.services.vision import vision_service
         from modules.services.gmail import gmail_service
@@ -212,6 +212,7 @@ class Brain:
             "open_file_or_url": open_file_or_url,
             "interactive_web_search": interactive_web_search,
             "close_web_results": close_web_results,
+            "direct_google_search": direct_google_search,
             "get_upcoming_events": calendar_service.get_upcoming_events,
             "create_event": calendar_service.create_event,
             "analyze_surroundings": vision_service.analyze_surroundings,

@@ -121,37 +121,40 @@ class SpeechToText:
             logger.info("Module STT (Écoute) actif. Parlez !")
         self.is_listening = True
         
-        # Lancement de l'écoute asynchrone avec Retry (pour éviter AssertionError si le thread précédent nettoie encore)
-        for attempt in range(10):
-            try:
-                self.stop_listening_fn = self.recognizer.listen_in_background(
-                    self.microphone, 
-                    self._callback,
-                    phrase_time_limit=10 # Coupe si on parle plus de 10s non-stop
-                )
-                break
-            except AssertionError as e:
-                if attempt == 9:
-                    logger.error(f"Impossible de démarrer l'écoute (Microphone bloqué): {e}")
-                time.sleep(0.2)
+        # Lancement de l'écoute asynchrone (le thread background est géré par la librairie)
+        self.stop_listening_fn = self.recognizer.listen_in_background(
+            self.microphone, 
+            self._callback,
+            phrase_time_limit=10 # Coupe si on parle plus de 10s non-stop
+        )
 
-    def stop(self, is_temporary=False):
+    def stop(self, is_temporary=False, wait=False):
         """Arrête l'écoute du micro"""
         if self.is_listening and self.stop_listening_fn:
-            self.stop_listening_fn(wait_for_stop=False)
+            # On passe wait_for_stop pour s'assurer que le thread relâche bien le microphone
+            self.stop_listening_fn(wait_for_stop=wait)
             self.is_listening = False
             if not is_temporary:
                 logger.info("Module STT arrêté.")
             
     async def _on_tts_start(self, payload: Dict[str, Any]):
+        # Filtre IMMÉDIATEMENT via le flag (avant que le thread s'arrête)
         self.is_suspended = True
-        self.stop(is_temporary=True) # Coupe PHYSIQUEMENT l'écoute pour éviter de s'entendre
+        # Stop physique SANS attendre (wait=False) pour éviter le blocage
+        # Le flag is_suspended = True filtre tout audio résiduel entre le signal d'arrêt
+        # et l'arrêt effectif du thread background
+        self.stop(is_temporary=True, wait=False)
         
     async def _on_tts_stop(self, payload: Dict[str, Any]):
-        # On attend une fraction de seconde de plus pour l'écho résiduel de la pièce
-        await asyncio.sleep(0.3)
-        self.start(recalibrate=False) # Relance PHYSIQUEMENT l'écoute
+        # Délai suffisant pour:
+        # 1. Laisser le thread speech_recognition se terminer VRAIMENT (quelques frames)
+        # 2. Vider les buffers audio qui contiendraient encore la voix TTS
+        # 3. Absorber l'écho résiduel de la pièce
+        # 0.8s = > pause_threshold (0.8s), ce qui garantit qu'aucune trame TTS
+        # n'est encore en cours de traitement quand on rouvre le micro
+        await asyncio.sleep(1.0)
         self.is_suspended = False
+        self.start(recalibrate=False)
 
 # Instance globale
 stt_instance = SpeechToText()

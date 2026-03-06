@@ -35,17 +35,17 @@
 
 .msg.jarvis {
   align-self: flex-start;
-  background: hsla(225, 40%, 15%, 0.5);
+  background: var(--panel-bg);
   border: 1px solid var(--glass-border);
   border-left: 3px solid var(--primary);
-  color: var(--text-main);
+  color: #fff;
   border-bottom-left-radius: 2px;
 }
 
 .chat-footer {
   display: flex;
   gap: 10px;
-  background: hsla(225, 40%, 12%, 0.6);
+  background: var(--panel-bg);
   padding: 8px;
   border-radius: 12px;
   border: 1px solid var(--glass-border);

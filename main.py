@@ -1,4 +1,12 @@
 import asyncio
+import sys
+
+# CRITIQUE: Python 3.12+ Windows — le ProactorEventLoop (par défaut) a un bug
+# connu (AssertionError dans _loop_writing) quand on lit des pipes de sous-processus
+# (ex: WhatsApp Bridge) de façon concurrente. On force le SelectorEventLoop ici.
+if sys.platform == "win32":
+    asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
+
 import threading
 import subprocess
 import os

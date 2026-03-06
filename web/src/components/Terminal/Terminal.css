@@ -11,16 +11,18 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 8px 12px;
-  background: rgba(0, 0, 0, 0.4);
+  padding: 10px 14px;
+  background: rgba(0, 0, 0, 0.2);
   border-bottom: 1px solid var(--glass-border);
 }
 
 .terminal-title {
   font-family: var(--font-tech);
-  font-size: 0.75rem;
-  color: var(--primary-glow);
-  letter-spacing: 1px;
+  font-size: 0.65rem;
+  font-weight: 500;
+  color: var(--primary);
+  opacity: 0.8;
+  letter-spacing: 2px;
 }
 
 .terminal-controls {
@@ -46,11 +48,11 @@
 
 .terminal-content {
   flex: 1;
-  padding: 10px;
+  padding: 12px;
   font-family: var(--font-mono);
   font-size: 0.85rem;
   overflow-y: auto;
-  background: rgba(0, 0, 0, 0.2);
+  background: transparent;
 }
 
 .log-line {

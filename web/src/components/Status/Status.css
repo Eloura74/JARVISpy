@@ -16,8 +16,8 @@
   width: 15px;
   height: 15px;
   border-radius: 50%;
-  background: white;
-  box-shadow: 0 0 10px var(--primary);
+  background: var(--primary);
+  box-shadow: 0 0 15px var(--primary);
   animation: pulse 2s infinite alternate;
 }
 

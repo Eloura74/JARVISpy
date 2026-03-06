@@ -85,6 +85,12 @@ class WebSocketService {
       case "audio.tts_stopped":
         store.setState({ ttsStatus: "Inactif", orbStatus: "idle" });
         break;
+      case "ui.show_web_results":
+        store.setState({ webSearchResults: data });
+        break;
+      case "ui.hide_web_results":
+        store.setState({ webSearchResults: null });
+        break;
       default:
         // Pour les autres événements, on peut juste les logger
         console.debug(`[WS Event] ${event}`, data);

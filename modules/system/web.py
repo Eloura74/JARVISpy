@@ -8,8 +8,10 @@ logger = get_logger("system.web")
 
 def interactive_web_search(query: str, max_results: int = 5) -> str:
     """
-    Recherche sur le web et affiche les résultats sous forme de "Tuiles" graphiques à l'utilisateur.
-    A utiliser par exemple si l'utilisateur demande "fais une recherche sur le web et affiche-moi les résultats".
+    Recherche sur le web et affiche les résultats sous forme de "Tuiles" graphiques dans l'interface de J.A.R.V.I.S.
+    À utiliser UNIQUEMENT si l'utilisateur demande explicitement "montre une sélection", "propose moi", 
+    ou d'afficher les résultats. Pour les recherches web classiques ("recherche [X]", "cherche sur google"), 
+    utilisez plutôt 'direct_google_search'.
     
     Args:
         query (str): La requête de recherche (ex: "actualité IA nov 2026").
@@ -86,3 +88,57 @@ def close_web_results() -> str:
     if hasattr(bus, 'main_loop') and bus.main_loop:
         asyncio.run_coroutine_threadsafe(bus.emit("ui.hide_web_results", {}), bus.main_loop)
     return "Popup fermée avec succès."
+
+def direct_google_search(query: str) -> str:
+    """
+    Effectue une recherche directe sur Google en ouvrant un nouvel onglet dans le navigateur de l'utilisateur.
+    À utiliser PAR DÉFAUT quand l'utilisateur dit "recherche [X]" ou "cherche sur google".
+    """
+    import subprocess
+    import shutil
+    import os
+
+    logger.info(f"Recherche directe Google demandée: '{query}'")
+    url = f"https://www.google.com/search?q={urllib.parse.quote(query)}"
+    try:
+        chrome_exe = None
+
+        # 1) Cherche chrome dans le PATH (détecte aussi bien les installations standard qu'alternatives)
+        chrome_exe = shutil.which("chrome") or shutil.which("google-chrome")
+
+        # 2) Cherche dans les emplacements Windows les plus courants
+        if not chrome_exe:
+            candidates = [
+                os.path.join(os.environ.get("PROGRAMFILES", "C:\\Program Files"), "Google", "Chrome", "Application", "chrome.exe"),
+                os.path.join(os.environ.get("PROGRAMFILES(X86)", "C:\\Program Files (x86)"), "Google", "Chrome", "Application", "chrome.exe"),
+                os.path.join(os.environ.get("LOCALAPPDATA", ""), "Google", "Chrome", "Application", "chrome.exe"),
+            ]
+            chrome_exe = next((p for p in candidates if p and os.path.exists(p)), None)
+
+        # 3) Cherche dans le registre Windows
+        if not chrome_exe:
+            try:
+                import winreg
+                key = winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, r"SOFTWARE\Microsoft\Windows\CurrentVersion\App Paths\chrome.exe")
+                chrome_exe = winreg.QueryValue(key, None)
+                winreg.CloseKey(key)
+            except Exception:
+                pass
+
+        if chrome_exe and os.path.exists(chrome_exe):
+            # Ouvre un NOUVEL onglet dans Chrome dans un processus TOTALEMENT détaché de JARVIS
+            subprocess.Popen(
+                [chrome_exe, "--new-tab", url],
+                creationflags=subprocess.DETACHED_PROCESS | subprocess.CREATE_NEW_PROCESS_GROUP
+            )
+            logger.info(f"Ouverture Chrome: {chrome_exe}")
+        else:
+            # Fallback : utilise le navigateur par défaut du système via webbrowser
+            import webbrowser
+            logger.warning("Chrome non trouvé, utilisation du navigateur système par défaut.")
+            webbrowser.open_new_tab(url)
+
+        return "J'ai ouvert un onglet de recherche Google, Monsieur."
+    except Exception as e:
+        logger.error(f"Erreur ouverture recherche Google: {e}")
+        return f"Erreur lors de l'ouverture du navigateur: {e}"
