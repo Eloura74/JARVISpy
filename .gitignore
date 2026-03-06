@@ -48,6 +48,7 @@ services/whatsapp_bridge/session/
 Thumbs.db
 *.log
 
+
 # --- BACKUPS ---
 web_backup/
 *_backup/
