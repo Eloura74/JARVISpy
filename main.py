@@ -66,6 +66,22 @@ def start_whatsapp_bridge():
         logger.debug("Bridge WhatsApp non trouvé, skip.")
         return None
     try:
+        # Libérer le port 3001 s'il est déjà occupé par une ancienne instance
+        import socket
+        port = int(os.environ.get("WA_PORT", "3001"))
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+            if s.connect_ex(('localhost', port)) == 0:
+                logger.warning(f"Port {port} déjà utilisé. Tentative de libération...")
+                if os.name == "nt":
+                    out = subprocess.check_output(f"netstat -ano | findstr :{port}", shell=True, text=True)
+                    for line in out.splitlines():
+                        if "LISTENING" in line:
+                            pid = line.strip().split()[-1]
+                            subprocess.run(f"taskkill /F /PID {pid}", shell=True, capture_output=True)
+                            logger.info(f"Ancien processus WA Bridge (PID {pid}) terminé.")
+                            break
+                time.sleep(1)
+
         flags = subprocess.CREATE_NO_WINDOW if os.name == "nt" else 0
         proc = subprocess.Popen(
             ["node", bridge_script],

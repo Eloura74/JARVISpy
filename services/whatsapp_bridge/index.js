@@ -161,8 +161,21 @@ app.get("/contacts/search", async (req, res) => {
   try {
     const contacts = await client.getContacts();
     const matches = contacts
-      .filter((c) => !c.isGroup && c.name && c.name.toLowerCase().includes(q))
-      .map((c) => ({ name: c.name, number: c.number, id: c.id.user }))
+      .filter((c) => {
+        if (c.isGroup) return false;
+        const displayName = (
+          c.name ||
+          c.pushname ||
+          c.shortName ||
+          ""
+        ).toLowerCase();
+        return displayName.includes(q);
+      })
+      .map((c) => ({
+        name: c.name || c.pushname || c.number,
+        number: c.number,
+        id: c.id.user,
+      }))
       .slice(0, 8);
     res.json(matches);
   } catch (err) {
