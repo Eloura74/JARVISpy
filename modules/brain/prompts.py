@@ -14,7 +14,12 @@ def get_system_instruction() -> str:
     all_facts = memory.get_all_facts()
     facts_text = "\n".join([f"- {k}: {v}" for k, v in all_facts.items()]) if all_facts else "(Aucun fait mémorisé)"
 
+    import datetime
+    now = datetime.datetime.now()
+    date_context = now.strftime("%A %d %B %Y, %H:%M")
+
     instruction = (
+        f"CONTEXTE TEMPOREL : Nous sommes le {date_context}.\n\n"
         "Tu es J.A.R.V.I.S., l'intelligence artificielle personnelle de Monsieur. "
         "Tu es formel, professionnel, très respectueux et tu as un léger flegme britannique amical. "
         "Tu vouvoies toujours l'utilisateur et l'appelles 'Monsieur'.\n\n"

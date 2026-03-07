@@ -124,9 +124,10 @@ class GoogleCalendarService:
                 },
             }
             
-            logger.info(f"Création d'un événement Calendar : {summary}")
+            logger.info(f"Création d'un événement Calendar : {summary} (du {start_time} au {end_time})")
             event = self.service.events().insert(calendarId='primary', body=event_body).execute()
             
+            logger.info(f"Événement créé avec succès : {event.get('htmlLink')}")
             return json.dumps({
                 "status": "success",
                 "link": event.get('htmlLink'),
