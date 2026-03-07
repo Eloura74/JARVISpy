@@ -196,7 +196,8 @@ def _setup_bus_to_ws_bridge():
         "audio.stt_activated",
         "ui.show_web_results",
         "ui.hide_web_results",
-        "maps.travel_info"
+        "maps.travel_info",
+        "system.calendar"
     ]
     
     for event_name in events_to_forward:

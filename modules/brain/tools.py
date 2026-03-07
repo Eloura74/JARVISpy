@@ -46,6 +46,8 @@ JARVIS_TOOLS = [
     remember_info, forget_info,
     # get_system_health_report, get_heavy_processes, # Retirés pour le moment (si installés)
     calendar_service.get_upcoming_events, calendar_service.create_event,
+    calendar_service.prepare_calendar_action,
+    calendar_service.update_event, calendar_service.delete_event,
     vision_service.analyze_surroundings,
     gmail_service.get_unread_emails_summary, gmail_service.mark_email_as_read,
     ha_service.get_entity_state, ha_service.call_service, ha_service.list_entities,

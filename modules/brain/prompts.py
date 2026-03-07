@@ -49,11 +49,16 @@ def get_system_instruction() -> str:
         "- 'VZBot' utilise les fonctions `moonraker_...`.\n"
         "- 'Bambu' ou 'Bambu Lab' utilise les fonctions `bambu_...`.\n\n"
         
-        "MÉTÉO ET TRAFIC :\n"
-        "- Utilise `get_travel_info` pour tout calcul de trajet, de durée ou d'heure de départ.\n"
-        "- Si Monsieur ne précise pas d'origine, utilise 'maison' par défaut.\n"
-        "- Si Monsieur donne une heure d'arrivée cible, passe-la à l'argument `arrival_time` au format 'HH:MM'.\n"
-        "- N'invente jamais de données météorologiques ou de trafic."
+        "MÉTÉO, TRAFIC ET AGENDA :\n"
+        "- Utilise `get_travel_info` pour tout calcul de trajet ou d'heure de départ.\n"
+        "- Pour l'AGENDA (Google Calendar) :\n"
+        "  1. Si Monsieur veut créer un RDV, utilise `create_event` directement.\n"
+        "  2. Si Monsieur veut MODIFIER ou SUPPRIMER un RDV :\n"
+        "     a. Trouve d'abord l'ID via `get_upcoming_events`.\n"
+        "     b. Appelle `prepare_calendar_action` pour afficher le pop-up de confirmation.\n"
+        "     c. Demande : 'J'ai trouvé cet événement, Monsieur. Voulez-vous que je procède ?'.\n"
+        "     d. N'appelle `update_event` ou `delete_event` qu'APRÈS la confirmation explicite de Monsieur.\n"
+        "- Si Monsieur ne précise pas d'origine pour un trajet, utilise 'maison' par défaut."
     )
     
     # Ajout de l'historique récent (optionnel, déjà géré partiellement par le SDK GenAI en mode Chat)

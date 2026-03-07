@@ -12,6 +12,10 @@ import { Settings } from "./components/Settings/Settings.js";
 import { WebSearch } from "./components/WebSearch/WebSearch.js";
 import { NeuralLog } from "./components/NeuralLog/NeuralLog.js";
 import { TravelWidget } from "./components/TravelWidget/TravelWidget.js";
+import { CalendarWidget } from "./components/CalendarWidget/CalendarWidget.js";
+
+import "./components/TravelWidget/TravelWidget.css";
+import "./components/CalendarWidget/CalendarWidget.css";
 
 /**
  * JARVIS App - Orchestrateur Principal Frontend
@@ -31,8 +35,9 @@ class JarvisApp {
     this.chat = new Chat("chat-mount");
     this.settings = new Settings("settings-mount");
     this.websearch = new WebSearch("websearch-mount");
-    this.neurallog = new NeuralLog("neural-log-container"); // Changed to match new ID
-    this.travelWidget = new TravelWidget("travel-widget-container"); // Instantiated TravelWidget
+    this.neurallog = new NeuralLog("neural-log-container");
+    this.travelWidget = new TravelWidget("travel-widget-container");
+    this.calendarWidget = new CalendarWidget(); // Le conteneur est créé dans le constructor du widget
 
     // Liaison du bouton paramètres
     document.getElementById("open-settings").addEventListener("click", () => {
@@ -51,6 +56,22 @@ class JarvisApp {
         lastProcessedTravel = state.travelInfo;
         // On "consomme" le message pour éviter une fermeture immédiate
         lastUserRequest = state.lastUserMessage;
+      }
+
+      // 1.1 Affichage du widget calendrier (Lot 8)
+      if (state.calendarInfo) {
+        this.calendarWidget.show(state.calendarInfo);
+        // Nettoyage automatique après 10s pour libérer l'espace HUD si action terminée
+        if (
+          state.calendarInfo.status === "success" &&
+          !state.calendarInfo.confirmRequired
+        ) {
+          setTimeout(() => {
+            store.setState({ calendarInfo: null });
+          }, 10000);
+        }
+      } else {
+        this.calendarWidget.hide();
       }
 
       // 2. Fermeture automatique lors d'une nouvelle demande

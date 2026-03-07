@@ -102,6 +102,25 @@ class GoogleCalendarService:
             logger.error(f"Erreur lors de la récupération des événements: {str(e)}")
             return f"Erreur lors de l'accès à l'agenda: {str(e)}"
 
+    def prepare_calendar_action(self, summary: str, start_time: str, type: str = "create", event_id: str = None) -> str:
+        """
+        Affiche l'événement dans le HUD sans l'enregistrer. 
+        À utiliser pour demander confirmation à l'utilisateur.
+        """
+        result = {
+            "status": "pending",
+            "summary": summary,
+            "start": start_time,
+            "type": type,
+            "id": event_id,
+            "confirmRequired": True
+        }
+        from core.event_bus import bus
+        import asyncio
+        if bus.main_loop:
+            asyncio.run_coroutine_threadsafe(bus.emit("system.calendar", result), bus.main_loop)
+        return "L'affichage de confirmation a été envoyé à Monsieur."
+
     def create_event(self, summary: str, start_time: str, end_time: str, description: str = "") -> str:
         """
         Crée un nouvel événement dans le calendrier principal.
@@ -128,13 +147,97 @@ class GoogleCalendarService:
             event = self.service.events().insert(calendarId='primary', body=event_body).execute()
             
             logger.info(f"Événement créé avec succès : {event.get('htmlLink')}")
-            return json.dumps({
+            
+            result = {
                 "status": "success",
                 "link": event.get('htmlLink'),
-                "id": event.get('id')
-            }, ensure_ascii=False)
+                "id": event.get('id'),
+                "summary": summary,
+                "start": start_time,
+                "type": "create"
+            }
+            
+            # Notifier le bus pour l'UI
+            import asyncio
+            from core.event_bus import bus
+            if bus.main_loop:
+                asyncio.run_coroutine_threadsafe(bus.emit("system.calendar", result), bus.main_loop)
+
+            return json.dumps(result, ensure_ascii=False)
         except Exception as e:
             logger.error(f"Erreur lors de la création de l'événement: {str(e)}")
+            return f"Erreur: {str(e)}"
+
+    def update_event(self, event_id: str, summary: str = None, start_time: str = None, end_time: str = None, description: str = None) -> str:
+        """
+        Met à jour un événement existant via son ID.
+        """
+        if not self.service:
+            return "Service Google Calendar non authentifié."
+            
+        try:
+            # Récupération de l'événement actuel
+            event = self.service.events().get(calendarId='primary', eventId=event_id).execute()
+            
+            if summary: event['summary'] = summary
+            if description: event['description'] = description
+            if start_time:
+                event['start'] = {'dateTime': start_time, 'timeZone': 'Europe/Paris'}
+            if end_time:
+                event['end'] = {'dateTime': end_time, 'timeZone': 'Europe/Paris'}
+                
+            logger.info(f"Mise à jour de l'événement {event_id} : {summary or 'inchangé'}")
+            updated_event = self.service.events().update(calendarId='primary', eventId=event_id, body=event).execute()
+            
+            result = {
+                "status": "success",
+                "link": updated_event.get('htmlLink'),
+                "id": updated_event.get('id'),
+                "summary": summary or event.get('summary'),
+                "start": start_time or event['start'].get('dateTime'),
+                "type": "update"
+            }
+
+            from core.event_bus import bus
+            import asyncio
+            if bus.main_loop:
+                asyncio.run_coroutine_threadsafe(bus.emit("system.calendar", result), bus.main_loop)
+
+            return json.dumps(result, ensure_ascii=False)
+        except Exception as e:
+            logger.error(f"Erreur lors de la mise à jour: {str(e)}")
+            return f"Erreur: {str(e)}"
+
+    def delete_event(self, event_id: str) -> str:
+        """
+        Supprime un événement via son ID.
+        """
+        if not self.service:
+            return "Service Google Calendar non authentifié."
+            
+        try:
+            # Récupération de l'événement pour avoir les détails dans le log UI avant suppression
+            event = self.service.events().get(calendarId='primary', eventId=event_id).execute()
+            
+            logger.info(f"Suppression de l'événement Calendar : {event_id}")
+            self.service.events().delete(calendarId='primary', eventId=event_id).execute()
+            
+            result = {
+                "status": "success", 
+                "message": "Événement supprimé.",
+                "type": "delete",
+                "id": event_id,
+                "summary": event.get('summary')
+            }
+
+            from core.event_bus import bus
+            import asyncio
+            if bus.main_loop:
+                asyncio.run_coroutine_threadsafe(bus.emit("system.calendar", result), bus.main_loop)
+
+            return json.dumps(result)
+        except Exception as e:
+            logger.error(f"Erreur lors de la suppression: {str(e)}")
             return f"Erreur: {str(e)}"
 
 # Instance globale (qui va s'auto-authentifier au démarrage si possible)
