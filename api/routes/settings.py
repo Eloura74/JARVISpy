@@ -10,24 +10,28 @@ from modules.services.vision import vision_service
 router = APIRouter()
 
 class SettingsUpdateModel(BaseModel):
-    gemini_api_key: str
-    tavily_api_key: str
-    kokoro_voice: str
-    vision_enabled: str
-    camera_index: str
-    gmail_enabled: str
-    ha_url: str
-    ha_token: str
-    moonraker_url: str
-    bambu_ip: str
-    bambu_serial: str
-    bambu_access_code: str
-    toast_enabled: str
-    wa_default_phone: str
-    wa_notify_on_alerts: str
-    openweather_api_key: str
-    google_maps_api_key: str
-    default_city: str
+    gemini_api_key: str = ""
+    tavily_api_key: str = ""
+    kokoro_voice: str = "ff_siwis"
+    vision_enabled: str = "false"
+    camera_index: str = "0"
+    gmail_enabled: str = "false"
+    ha_url: str = ""
+    ha_token: str = ""
+    moonraker_url: str = ""
+    bambu_ip: str = ""
+    bambu_serial: str = ""
+    bambu_access_code: str = ""
+    toast_enabled: str = "true"
+    wa_default_phone: str = ""
+    wa_notify_on_alerts: str = "false"
+    openweather_api_key: str = ""
+    google_maps_api_key: str = ""
+    default_city: str = ""
+    proactive_enabled: str = "true"
+    presence_check_interval: str = "5"
+    absence_threshold: str = "600"
+    system_monitor_interval: str = "60"
 
 @router.get("/api/settings")
 async def get_current_settings():
@@ -63,6 +67,10 @@ async def get_current_settings():
         "_raw_ha_token": settings.ha_token,
         "_raw_openweather": settings.openweather_api_key,
         "_raw_google_maps": settings.google_maps_api_key,
+        "proactive_enabled": settings.proactive_enabled,
+        "presence_check_interval": settings.presence_check_interval,
+        "absence_threshold": settings.absence_threshold,
+        "system_monitor_interval": settings.system_monitor_interval,
     }
 
 @router.post("/api/settings")
@@ -137,6 +145,19 @@ async def update_settings(update_data: SettingsUpdateModel):
             
         dotenv.set_key(env_path, "DEFAULT_CITY", update_data.default_city)
         settings.default_city = update_data.default_city
+
+        # Proactivité
+        dotenv.set_key(env_path, "PROACTIVE_ENABLED", update_data.proactive_enabled)
+        settings.proactive_enabled = update_data.proactive_enabled
+        
+        dotenv.set_key(env_path, "PRESENCE_CHECK_INTERVAL", update_data.presence_check_interval)
+        settings.presence_check_interval = int(update_data.presence_check_interval or 5)
+        
+        dotenv.set_key(env_path, "ABSENCE_THRESHOLD", update_data.absence_threshold)
+        settings.absence_threshold = int(update_data.absence_threshold or 600)
+        
+        dotenv.set_key(env_path, "SYSTEM_MONITOR_INTERVAL", update_data.system_monitor_interval)
+        settings.system_monitor_interval = int(update_data.system_monitor_interval or 60)
 
         return {"status": "success", "message": "Paramètres sauvegardés avec succès. Redémarrage du serveur conseillé pour les clés."}
     except Exception as e:

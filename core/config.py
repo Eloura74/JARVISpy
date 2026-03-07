@@ -36,6 +36,12 @@ class Settings(BaseSettings):
     google_maps_api_key: str = ""
     default_city: str = ""
     
+    # Paramètres de Proactivité
+    proactive_enabled: str = "true"
+    presence_check_interval: int = 5
+    absence_threshold: int = 600
+    system_monitor_interval: int = 60
+    
     # Base de données
     db_path: str = "data/jarvis.db"
     

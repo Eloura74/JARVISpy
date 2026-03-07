@@ -89,6 +89,30 @@ export class Settings {
               </div>
 
               <div class="form-section">
+                <div class="section-label">PROACTIVE INTELLIGENCE</div>
+                <div class="toggle-group">
+                  <label class="toggle-label">
+                    <input type="checkbox" name="proactive_enabled">
+                    <span>ENABLE PROACTIVE ACTIONS</span>
+                  </label>
+                </div>
+                <div class="form-grid">
+                  <div class="input-field">
+                    <label>PRESENCE CHECK (SEC)</label>
+                    <input type="number" name="presence_check_interval" min="1" />
+                  </div>
+                  <div class="input-field">
+                    <label>ABSENCE THRESHOLD (SEC)</label>
+                    <input type="number" name="absence_threshold" min="30" />
+                  </div>
+                  <div class="input-field">
+                    <label>SYS MONITOR (SEC)</label>
+                    <input type="number" name="system_monitor_interval" min="10" />
+                  </div>
+                </div>
+              </div>
+
+              <div class="form-section">
                 <div class="section-label">MESSAGING & COMMS</div>
                 <div class="toggle-group">
                   <label class="toggle-label">
@@ -322,7 +346,11 @@ export class Settings {
       if (res.ok) {
         this.modal.close();
       } else {
-        alert("ERREUR CRITIQUE DE DÉPLOIEMENT");
+        const errData = await res.json().catch(() => ({}));
+        console.error("[SETTINGS] Erreur validation:", errData);
+        alert(
+          `ERREUR DE DÉPLOIEMENT: ${errData.detail?.[0]?.msg || "Format invalide"}`,
+        );
       }
     } catch (err) {
       alert("ÉCHEC LIAISON");

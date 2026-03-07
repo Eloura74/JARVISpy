@@ -152,6 +152,14 @@ async def main():
     # Démarrage du système d'alertes proactives (asyncio, non-bloquant, 0 token Gemini)
     from modules.alerts import start_all_monitors
     start_all_monitors()
+
+    # Démarrage du monitor système (CPU/RAM/Batterie)
+    from modules.system import monitor as sys_monitor
+    bus.main_loop.create_task(sys_monitor.run(interval_seconds=60))
+    
+    # Démarrage de la détection de présence (Proactive Vision)
+    from modules.brain.proactive import start_proactive_loop
+    start_proactive_loop()
     
     # Démarrage du gestionnaire de notifications (Toast + WhatsApp)
     from modules.notifications import start as start_notifications
