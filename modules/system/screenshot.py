@@ -44,13 +44,24 @@ def analyze_screen(monitor_index: int = 1) -> str:
 
         logger.info(f"Capture écran {monitor_index} réussie ({img.width}x{img.height})")
         
-        # Format spécifique pour que le Cerveau reconnaisse l'image
-        return json.dumps({
+        result = {
             "type": "image_data",
             "mime_type": "image/jpeg",
             "data": b64,
             "description": f"Capture de l'écran {monitor_index}"
-        })
+        }
+
+        # Émission vers l'UI (via Event Bus -> WebSocket)
+        from core.event_bus import bus
+        import asyncio
+        if bus.main_loop:
+            asyncio.run_coroutine_threadsafe(
+                bus.emit("ui.show_vision", result), 
+                bus.main_loop
+            )
+
+        # Format spécifique pour que le Cerveau reconnaisse l'image
+        return json.dumps(result)
     except Exception as e:
         logger.error(f"Erreur lors de la capture d'écran : {e}")
         return f"Erreur système : impossible de capturer l'écran {monitor_index}."

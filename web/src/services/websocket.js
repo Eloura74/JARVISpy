@@ -121,13 +121,19 @@ class WebSocketService {
         console.debug("[WS] Micro activé, passage en mode listening.");
         store.setState({ orbStatus: "listening" });
         break;
+      case "ui.show_vision":
+        store.setState({ visionData: data });
+        break;
+      case "ui.show_emails":
+        store.setState({ emailData: data });
+        break;
+      case "system.calendar":
+        store.setState({ calendarInfo: data });
+        break;
       case "maps.travel_info":
-        // On s'assure que orbStatus repasse en idle pour que le widget puisse s'afficher
-        // sans être immédiatement fermé par la détection d'interaction dans app.js
         store.setState({ travelInfo: data, orbStatus: "idle" });
         break;
       default:
-        // Pour les autres événements, on peut juste les logger
         console.debug(`[WS Event] ${event}`, data);
     }
   }

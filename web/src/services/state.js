@@ -12,6 +12,7 @@ class StateStore {
       lastUserMessage: "",
       lastJarvisMessage: "",
       lastNeuralLog: null, // { query, memories: [] }
+      visionData: null, // { data: base64, mime_type: string }
       calendarInfo: null, // { summary, start, link, type: 'create'|'update'|'delete' }
       travelInfo: null,
       activeTab: "general",

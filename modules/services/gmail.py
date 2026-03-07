@@ -9,6 +9,7 @@ from bs4 import BeautifulSoup
 
 from core.logger import get_logger
 from core.config import settings
+from core.event_bus import bus
 
 logger = get_logger("services.gmail")
 
@@ -85,54 +86,82 @@ class GoogleMailService:
         # Afin de ne pas casser si bs4 est absent, on peut intercepter l'erreur
         return body_text
 
+    def _clean_text_for_speech(self, text: str) -> str:
+        """Nettoie le texte pour éviter que le TTS ne lise des caractères spéciaux."""
+        if not text: return ""
+        import re
+        # Enlever les emojis et caractères spéciaux trop techniques
+        text = re.sub(r'[^\w\sàâäéèêëïîôöùûüç.,!?\-\']', ' ', text)
+        # Enlever les espaces multiples
+        text = re.sub(r'\s+', ' ', text).strip()
+        return text
+
     def get_unread_emails_summary(self, max_results: int = 5) -> str:
         """
-        Outil appelé par l'IA pour lire les derniers emails NON LUS dans la boite de réception.
+        Outil appelé par l'IA pour lire les derniers emails NON LUS.
+        Met également à jour le HUD via le bus d'événements.
         """
         if settings.gmail_enabled.lower() != "true":
-             return "Le module Gmail est désactivé. Demande à l'utilisateur de l'activer dans le GUI (Paramètres)."
+             return "Le module Gmail est désactivé."
              
         if not self.service:
-            # Tente de s'authentifier à la volée s'il a été activé entre temps
             self._authenticate()
             if not self.service:
-                return "Erreur: Service Gmail non authentifié. L'utilisateur doit vérifier le fichier credentials.json et s'authentifier."
+                return "Erreur d'authentification Gmail."
 
         try:
-            logger.info("Récupération des emails non lus via Gmail API...")
+            logger.info("Récupération des emails pour le HUD...")
             results = self.service.users().messages().list(userId='me', q="is:unread in:inbox", maxResults=max_results).execute()
             messages = results.get('messages', [])
 
             if not messages:
-                return "Tu n'as aucun nouvel e-mail non lu dans ta boîte de réception."
+                return "Aucun nouvel e-mail non lu."
 
             formatted_emails = []
+            ui_emails = []
+            
             for msg in messages:
                 msg_data = self.service.users().messages().get(userId='me', id=msg['id'], format='full').execute()
-                
                 payload = msg_data.get('payload', {})
                 headers = payload.get('headers', [])
                 
-                subject = next((header['value'] for header in headers if header['name'].lower() == 'subject'), "Sans Object")
+                subject = next((header['value'] for header in headers if header['name'].lower() == 'subject'), "Sans Objet")
                 sender = next((header['value'] for header in headers if header['name'].lower() == 'from'), "Inconnu")
                 date = next((header['value'] for header in headers if header['name'].lower() == 'date'), "")
 
-                body = self._extract_body(payload)[:500] # On limite aux 500 premiers caractères pour économiser les tokens
+                body = self._extract_body(payload)[:500]
                 
-                formatted_emails.append({
+                # Nettoyage pour le TTS
+                clean_subject = self._clean_text_for_speech(subject)
+                clean_sender = self._clean_text_for_speech(sender.split('<')[0])
+
+                email_obj = {
                     "id": msg['id'],
-                    "from": sender,
-                    "subject": subject,
+                    "from": clean_sender,
+                    "subject": clean_subject,
                     "date": date,
-                    "body_snippet": body.strip() + "..." if len(body) == 500 else body.strip()
-                })
+                    "body_snippet": body.strip()
+                }
+                formatted_emails.append(email_obj)
                 
+                # Données pour l'UI
+                ui_emails.append({
+                    "from": sender.split('<')[0].strip(),
+                    "subject": subject,
+                    "date": date
+                })
+
+            # Notification UI (asynchrone depuis un thread synchrone)
+            if hasattr(bus, "main_loop") and bus.main_loop:
+                import asyncio
+                asyncio.run_coroutine_threadsafe(bus.emit("ui.show_emails", ui_emails), bus.main_loop)
+            
             return f"Voici les {len(formatted_emails)} derniers e-mails non lus:\n" + json.dumps(formatted_emails, ensure_ascii=False)
             
         except Exception as e:
-            logger.error(f"Erreur lors de la récupération des e-mails: {str(e)}")
-            return f"Une erreur technique m'empêche d'accéder aux e-mails: {str(e)}"
-            
+            logger.error(f"Erreur Gmail summary: {str(e)}")
+            return f"Erreur technique Gmail: {str(e)}"
+
     def mark_email_as_read(self, email_id: str) -> str:
         """
         Marque un email spécifique comme lu pour le retirer de la pile des non-lus.

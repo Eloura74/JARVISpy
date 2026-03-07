@@ -196,6 +196,8 @@ def _setup_bus_to_ws_bridge():
         "audio.stt_activated",
         "ui.show_web_results",
         "ui.hide_web_results",
+        "ui.show_vision",
+        "ui.show_emails",
         "maps.travel_info",
         "system.calendar"
     ]

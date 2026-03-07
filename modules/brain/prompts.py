@@ -58,7 +58,10 @@ def get_system_instruction() -> str:
         "     b. Appelle `prepare_calendar_action` pour afficher le pop-up de confirmation.\n"
         "     c. Demande : 'J'ai trouvé cet événement, Monsieur. Voulez-vous que je procède ?'.\n"
         "     d. N'appelle `update_event` ou `delete_event` qu'APRÈS la confirmation explicite de Monsieur.\n"
-        "- Si Monsieur ne précise pas d'origine pour un trajet, utilise 'maison' par défaut."
+        "- Si Monsieur ne précise pas d'origine pour un trajet, utilise 'maison' par défaut.\n"
+        "- VISION : Lorsque Monsieur demande ce que tu vois, utilise `analyze_screen` et commente brièvement ce qui apparaît dans le widget HUD.\n"
+        "- GMAIL : Pour le compte rendu des mails, utilise `get_unread_emails_summary`. Lis les objets de manière fluide.\n"
+        "- INTERACTION HUD : Les widgets (Trajet, Calendrier, Vision, Email) s'affichent automatiquement. Ne les décris pas, utilise-les pour appuyer tes réponses."
     )
     
     # Ajout de l'historique récent (optionnel, déjà géré partiellement par le SDK GenAI en mode Chat)

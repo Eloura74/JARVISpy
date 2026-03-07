@@ -175,65 +175,61 @@ class SpeechToText:
     def start(self, recalibrate=True):
         """Lance l'écoute permanente du micro en arrière-plan"""
         if self.is_listening:
+            logger.debug("STT déjà en cours d'écoute.")
             return
 
         self._setup_mic(recalibrate=recalibrate)
         if not self.microphone:
+            logger.error("Démarrage STT impossible : micro non configuré.")
             return
 
-        # CRITIQUE: attendre que le thread précédent ait vraiment libéré le stream.
-        # Avec wait=False, le thread signale l'arrêt mais n'a pas encore fermé source.stream.
-        # Si listen_in_background est appelé pendant que stream != None, on obtient:
-        # AssertionError: This audio source is already inside a context manager
-        import time
+        # Attente libération stream précédent
         if hasattr(self.microphone, 'stream') and self.microphone.stream is not None:
-            for _ in range(30):  # max 3 secondes (30 * 100ms)
+            logger.debug("Attente fermeture stream précédent...")
+            for _ in range(50):  # max 5 secondes
                 time.sleep(0.1)
                 if self.microphone.stream is None:
                     break
             else:
-                logger.warning("Stream micro toujours ouvert après 3s — abandon du redémarrage")
+                logger.warning("Stream micro toujours ouvert après 5s — abandon du redémarrage")
                 return
 
-        if recalibrate:
-            logger.info("Module STT (Écoute) actif. Parlez !")
+        logger.info("Module STT (Écoute) actif. Parlez !")
         self.is_listening = True
 
-        # Lancement de l'écoute asynchrone (le thread background est géré par la librairie)
-        self.stop_listening_fn = self.recognizer.listen_in_background(
-            self.microphone,
-            self._callback,
-            phrase_time_limit=8  # Coupe si on parle plus de 8s non-stop
-        )
+        try:
+            self.stop_listening_fn = self.recognizer.listen_in_background(
+                self.microphone,
+                self._callback,
+                phrase_time_limit=8
+            )
+        except Exception as e:
+            logger.error(f"Erreur lors du lancement de listen_in_background: {e}")
+            self.is_listening = False
 
     def stop(self, is_temporary=False, wait=False):
         """Arrête l'écoute du micro"""
         if self.is_listening and self.stop_listening_fn:
-            # On passe wait_for_stop pour s'assurer que le thread relâche bien le microphone
+            logger.debug(f"Arrêt STT {'temporaire' if is_temporary else ''}...")
             self.stop_listening_fn(wait_for_stop=wait)
             self.is_listening = False
             if not is_temporary:
                 logger.info("Module STT arrêté.")
             
     async def _on_tts_start(self, payload: Dict[str, Any]):
-        # Filtre IMMÉDIATEMENT via le flag (avant que le thread s'arrête)
         self.is_suspended = True
-        # Stop physique SANS attendre (wait=False) pour éviter le blocage
-        # Le flag is_suspended = True filtre tout audio résiduel entre le signal d'arrêt
-        # et l'arrêt effectif du thread background
         self.stop(is_temporary=True, wait=False)
         
     async def _on_tts_stop(self, payload: Dict[str, Any]):
-        # Délai suffisant pour:
-        # 1. Laisser le thread speech_recognition se terminer VRAIMENT (quelques frames)
-        # 2. Vider les buffers audio qui contiendraient encore la voix TTS
-        # 3. Absorber l'écho résiduel de la pièce
-        # 0.8s = > pause_threshold (0.8s), ce qui garantit qu'aucune trame TTS
-        # n'est encore en cours de traitement quand on rouvre le micro
-        await asyncio.sleep(1.0)
-        self.is_suspended = False
-        self.start(recalibrate=False)
-        await bus.emit("audio.stt_activated", {})
+        try:
+            # On attend que l'écho se dissipe et que le thread de transcription se calme
+            await asyncio.sleep(1.2)
+            self.is_suspended = False
+            self.start(recalibrate=False)
+            await bus.emit("audio.stt_activated", {})
+            logger.debug("Micro STT réactivé après TTS.")
+        except Exception as e:
+            logger.error(f"Erreur dans _on_tts_stop (redémarrage STT): {e}")
 
 # Instance globale
 stt_instance = SpeechToText()
