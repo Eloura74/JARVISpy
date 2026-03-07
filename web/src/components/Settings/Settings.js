@@ -178,6 +178,20 @@ export class Settings {
               </div>
 
               <div class="form-section">
+                <div class="section-label">FAVORITE PLACES (MAPS)</div>
+                <div class="form-grid">
+                  <div class="input-field">
+                    <label>🏠 MAISON (ADRESSE)</label>
+                    <input type="text" id="loc-home" placeholder="123 rue de..." />
+                  </div>
+                  <div class="input-field">
+                    <label>🏢 TRAVAIL (ADRESSE)</label>
+                    <input type="text" id="loc-work" placeholder="Zone indus..." />
+                  </div>
+                </div>
+              </div>
+
+              <div class="form-section">
                 <div class="section-label">NOTIFICATIONS</div>
                 <div class="toggle-group">
                   <label class="toggle-label">
@@ -263,6 +277,7 @@ export class Settings {
       });
 
       await this.loadVoices(data.kokoro_voice);
+      await this.loadLocations();
     } catch (e) {
       console.error(e);
     }
@@ -281,6 +296,17 @@ export class Settings {
           if (v === currentVoice) opt.selected = true;
           this.voiceSelect.appendChild(opt);
         });
+      }
+    } catch (e) {}
+  }
+
+  async loadLocations() {
+    try {
+      const res = await fetch("/api/settings/locations");
+      if (res.ok) {
+        const data = await res.json();
+        this.container.querySelector("#loc-home").value = data.home || "";
+        this.container.querySelector("#loc-work").value = data.work || "";
       }
     } catch (e) {}
   }
@@ -344,6 +370,7 @@ export class Settings {
       });
 
       if (res.ok) {
+        await this.saveLocations();
         this.modal.close();
       } else {
         const errData = await res.json().catch(() => ({}));
@@ -357,6 +384,20 @@ export class Settings {
     } finally {
       this.saveBtn.textContent = "DÉPLOYER CONFIGURATION";
     }
+  }
+
+  async saveLocations() {
+    const data = {
+      home: this.container.querySelector("#loc-home").value,
+      work: this.container.querySelector("#loc-work").value,
+    };
+    try {
+      await fetch("/api/settings/locations", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      });
+    } catch (e) {}
   }
 
   open() {

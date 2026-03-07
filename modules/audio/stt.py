@@ -233,6 +233,7 @@ class SpeechToText:
         await asyncio.sleep(1.0)
         self.is_suspended = False
         self.start(recalibrate=False)
+        await bus.emit("audio.stt_activated", {})
 
 # Instance globale
 stt_instance = SpeechToText()

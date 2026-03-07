@@ -163,6 +163,27 @@ async def update_settings(update_data: SettingsUpdateModel):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Erreur lors de la sauvegarde: {str(e)}")
 
+@router.get("/api/settings/locations")
+async def get_favorite_locations():
+    """Récupère les adresses favorites (Maison, Travail)."""
+    import json
+    path = "data/locations.json"
+    if not os.path.exists(path):
+        return {"home": "", "work": ""}
+    with open(path, "r", encoding="utf-8") as f:
+        return json.load(f)
+
+@router.post("/api/settings/locations")
+async def update_favorite_locations(data: dict):
+    """Met à jour les adresses favorites."""
+    import json
+    path = "data/locations.json"
+    # Créer le dossier data si absent
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    with open(path, "w", encoding="utf-8") as f:
+        json.dump(data, f, indent=4, ensure_ascii=False)
+    return {"status": "success", "message": "Adresses favorites mises à jour."}
+
 @router.get("/api/voices")
 async def get_available_voices():
     """Liste les voix disponibles dans le modèle Kokoro charge."""

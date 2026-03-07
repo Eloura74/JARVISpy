@@ -11,6 +11,7 @@ import { Chat } from "./components/Chat/Chat.js";
 import { Settings } from "./components/Settings/Settings.js";
 import { WebSearch } from "./components/WebSearch/WebSearch.js";
 import { NeuralLog } from "./components/NeuralLog/NeuralLog.js";
+import { TravelWidget } from "./components/TravelWidget/TravelWidget.js";
 
 /**
  * JARVIS App - Orchestrateur Principal Frontend
@@ -30,11 +31,40 @@ class JarvisApp {
     this.chat = new Chat("chat-mount");
     this.settings = new Settings("settings-mount");
     this.websearch = new WebSearch("websearch-mount");
-    this.neurallog = new NeuralLog("neurallog-mount");
+    this.neurallog = new NeuralLog("neural-log-container"); // Changed to match new ID
+    this.travelWidget = new TravelWidget("travel-widget-container"); // Instantiated TravelWidget
 
     // Liaison du bouton paramètres
     document.getElementById("open-settings").addEventListener("click", () => {
       this.settings.open();
+    });
+
+    // Événements et synchronisation du Store
+    let lastProcessedTravel = null;
+    let lastUserRequest = "";
+
+    store.subscribe((state) => {
+      // 1. Affichage du widget de trajet
+      if (state.travelInfo && state.travelInfo !== lastProcessedTravel) {
+        this.travelWidget.show(state.travelInfo);
+        lastProcessedTravel = state.travelInfo;
+      }
+
+      // 2. Fermeture automatique lors d'une nouvelle demande
+      // Désormais, on ferme dès que l'Orb change d'état (écoute ou réflexion)
+      // ou qu'un nouveau message utilisateur arrive.
+      const isInteracting =
+        state.orbStatus === "listening" ||
+        state.orbStatus === "thinking" ||
+        (state.lastUserMessage && state.lastUserMessage !== lastUserRequest);
+
+      if (isInteracting && this.travelWidget.isVisible) {
+        console.log(
+          "[APP] Masquage automatique du TravelWidget (Interaction détectée)",
+        );
+        this.travelWidget.hide();
+        if (state.lastUserMessage) lastUserRequest = state.lastUserMessage;
+      }
     });
 
     // Connexion au serveur

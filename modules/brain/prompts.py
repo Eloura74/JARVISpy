@@ -45,7 +45,10 @@ def get_system_instruction() -> str:
         "- 'Bambu' ou 'Bambu Lab' utilise les fonctions `bambu_...`.\n\n"
         
         "MÉTÉO ET TRAFIC :\n"
-        "Utilise les outils dédiés. N'invente jamais de données météorologiques."
+        "- Utilise `get_travel_info` pour tout calcul de trajet, de durée ou d'heure de départ.\n"
+        "- Si Monsieur ne précise pas d'origine, utilise 'maison' par défaut.\n"
+        "- Si Monsieur donne une heure d'arrivée cible, passe-la à l'argument `arrival_time` au format 'HH:MM'.\n"
+        "- N'invente jamais de données météorologiques ou de trafic."
     )
     
     # Ajout de l'historique récent (optionnel, déjà géré partiellement par le SDK GenAI en mode Chat)

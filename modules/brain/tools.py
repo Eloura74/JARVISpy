@@ -35,7 +35,7 @@ from modules.memory.context import context_buffer
 from modules.memory.manager import remember_info, forget_info
 from modules.notifications.whatsapp import send_whatsapp, get_whatsapp_status
 from modules.services.weather import get_current_weather, get_weather_forecast
-from modules.services.maps import get_travel_time
+from modules.services.maps import maps_service
 
 # Liste exhaustives des outils passés à l'API Gemini
 JARVIS_TOOLS = [
@@ -60,7 +60,7 @@ JARVIS_TOOLS = [
     context_buffer.get_suggestions,
     send_whatsapp, get_whatsapp_status,
     get_current_weather, get_weather_forecast,
-    get_travel_time
+    maps_service.get_travel_info
 ]
 
 # Dictionnaire de mapping pour l'exécution automatique des fonctions par le SDK

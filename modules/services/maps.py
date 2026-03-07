@@ -1,82 +1,120 @@
-"""
-Module Cartographie via Google Maps API
-Fournit le temps de trajet avec trafic en temps réel pour JARVIS.
-"""
-import httpx
-from core.config import settings
+import requests
+import datetime
+import asyncio
+import json
+import os
+from typing import Optional, Dict, Any, Union
 from core.logger import get_logger
+from core.config import settings
+from core.event_bus import bus
 
 logger = get_logger("services.maps")
 
-BASE_URL = "https://maps.googleapis.com/maps/api/distancematrix/json"
-
-def _get_api_key() -> str:
-    key = settings.google_maps_api_key
-    if not key:
-        logger.warning("Clé API Google Maps manquante. Le service trajet ne fonctionnera pas.")
-    return key
-
-def _get_origin(origin: str) -> str:
-    """Utilise la ville par défaut si l'origine n'est pas spécifiée."""
-    if not origin:
-        origin = settings.default_city
-    return origin
-
-def get_travel_time(destination: str, origin: str = "") -> str:
+class MapsService:
     """
-    Calcule le temps de trajet en tenant compte du trafic actuel.
-    Si l'origine est vide, utilise la ville par défaut des paramètres.
+    Service d'interaction avec Google Maps Platform (Directions API).
+    Gère le calcul d'itinéraires réels avec polyline et trafic.
     """
-    api_key = _get_api_key()
-    if not api_key:
-        return "Clé API Google Maps non configurée."
-        
-    start_point = _get_origin(origin)
-    if not start_point:
-        return "Lieu de départ (origine) non précisé et aucune ville par défaut configurée."
+    
+    def __init__(self):
+        self.base_url = "https://maps.googleapis.com/maps/api/directions/json"
 
-    try:
-        response = httpx.get(
-            BASE_URL,
-            params={
-                "origins": start_point,
-                "destinations": destination,
-                "key": api_key,
-                "language": "fr",
-                "departure_time": "now",  # Activation du mode trafic temps réel
-                "traffic_model": "best_guess"
-            },
-            timeout=5.0
-        )
-        response.raise_for_status()
-        data = response.json()
-        
-        if data.get("status") != "OK":
-            logger.error(f"Erreur API Google Maps: {data.get('status')} - {data.get('error_message', '')}")
-            return "Une erreur est survenue lors du calcul de l'itinéraire via Google Maps."
+    @property
+    def api_key(self) -> str:
+        return settings.google_maps_api_key
 
-        # Analyse du premier résultat
-        element = data["rows"][0]["elements"][0]
-        status = element.get("status")
+    def get_travel_info(self, destination: str, origin: str = "maison", arrival_time: Optional[str] = None) -> Dict[str, Any]:
+        """
+        Calcule l'itinéraire réel (polyline) et l'heure de départ conseillée.
+        """
+        if not self.api_key:
+            return {"error": "Clé API Google Maps manquante."}
+
+        # Résolution des favoris
+        loc_path = "data/locations.json"
+        favs = {}
+        if os.path.exists(loc_path):
+            try:
+                with open(loc_path, "r", encoding="utf-8") as f:
+                    favs = json.load(f)
+            except: pass
         
-        if status == "ZERO_RESULTS":
-            return f"Aucun itinéraire trouvé entre {start_point} et {destination}."
-        elif status != "OK":
-            return f"Problème d'itinéraire ({status})."
-            
-        distance = element["distance"]["text"]
-        duration = element["duration"]["text"]
-        
-        # S'il y a du trafic, Google renvoie 'duration_in_traffic'
-        if "duration_in_traffic" in element:
-            duration_traffic = element["duration_in_traffic"]["text"]
-            return f"Temps de trajet prévu vers {destination} au départ de {start_point} : {duration_traffic} (Trafic actuel inclus). Distance : {distance}."
+        synonyms = {"maison": "home", "domicile": "home", "travail": "work", "bureau": "work", "job": "work"}
+        search_origin = synonyms.get(origin.lower(), origin.lower())
+        search_dest = synonyms.get(destination.lower(), destination.lower())
+
+        real_origin = favs.get(search_origin, origin)
+        real_dest = favs.get(search_dest, destination)
+
+        # Parsing heure
+        target_dt = None
+        if arrival_time:
+            try:
+                now = datetime.datetime.now()
+                clean_time = arrival_time.lower().replace('h', ':').strip()
+                if clean_time.endswith(':'): clean_time += '00'
+                h, m = map(int, clean_time.split(':'))
+                target_dt = now.replace(hour=h, minute=m, second=0, microsecond=0)
+                if target_dt < now: target_dt += datetime.timedelta(days=1)
+            except: pass
+
+        params = {
+            "origin": real_origin,
+            "destination": real_dest,
+            "key": self.api_key,
+            "mode": "driving",
+            "language": "fr",
+            "traffic_model": "best_guess"
+        }
+
+        if target_dt:
+            # Estimation départ pour avoir l'impact du trafic à l'heure voulue
+            params["departure_time"] = int((target_dt - datetime.timedelta(minutes=45)).timestamp())
         else:
-            return f"Temps de trajet prévu vers {destination} au départ de {start_point} : {duration}. Distance : {distance}."
+            params["departure_time"] = "now"
+
+        try:
+            logger.info(f"Requête Directions: {real_origin} -> {real_dest}")
+            response = requests.get(self.base_url, params=params)
+            data = response.json()
+
+            if data["status"] != "OK":
+                return {"error": f"Erreur Google Maps: {data.get('error_message', data['status'])}"}
+
+            route = data["routes"][0]
+            leg = route["legs"][0]
             
-    except httpx.HTTPError as e:
-        logger.error(f"Erreur HTTP Maps: {e}")
-        return "Impossible de joindre le système de trafic actuellement."
-    except Exception as e:
-        logger.error(f"Erreur Maps: {e}")
-        return "Une erreur inattendue est survenue avec le calcul de trajet."
+            # Temps avec trafic (si dispo)
+            duration_text = leg["duration_in_traffic"]["text"] if "duration_in_traffic" in leg else leg["duration"]["text"]
+            duration_seconds = leg["duration_in_traffic"]["value"] if "duration_in_traffic" in leg else leg["duration"]["value"]
+            
+            result = {
+                "origin": leg["start_address"],
+                "destination": leg["end_address"],
+                "distance": leg["distance"]["text"],
+                "duration": duration_text,
+                "duration_seconds": duration_seconds,
+                "polyline": route["overview_polyline"]["points"],
+                "api_key": self.api_key
+            }
+            logger.info(f"Itinéraire résolu : {result['distance']} en {result['duration']}. Polyline (début): {result['polyline'][:20]}...")
+
+            if target_dt:
+                departure_dt = target_dt - datetime.timedelta(seconds=duration_seconds + 300)
+                result["suggested_departure"] = departure_dt.strftime("%H:%M")
+                result["arrival_target"] = target_dt.strftime("%H:%M")
+
+            # Émission pour le widget
+            if hasattr(bus, 'main_loop') and bus.main_loop:
+                bus.main_loop.create_task(bus.emit("maps.travel_info", result))
+            else:
+                asyncio.create_task(bus.emit("maps.travel_info", result))
+
+            return result
+
+        except Exception as e:
+            logger.error(f"Erreur service Maps: {e}")
+            return {"error": str(e)}
+
+# Singleton
+maps_service = MapsService()

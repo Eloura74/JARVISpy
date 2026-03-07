@@ -193,8 +193,10 @@ def _setup_bus_to_ws_bridge():
         "memory.context_retrieved",
         "audio.tts_started",
         "audio.tts_stopped",
+        "audio.stt_activated",
         "ui.show_web_results",
-        "ui.hide_web_results"
+        "ui.hide_web_results",
+        "maps.travel_info"
     ]
     
     for event_name in events_to_forward:

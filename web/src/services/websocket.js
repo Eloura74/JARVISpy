@@ -27,6 +27,9 @@ class WebSocketService {
     this.ws.onmessage = (event) => {
       try {
         const msg = JSON.parse(event.data);
+        if (msg.event !== "audio.level") {
+          console.debug(`[WS RECV] ${msg.event}`, msg.data);
+        }
         this.handleMessage(msg);
       } catch (e) {
         console.error("[WS] Erreur parsing message:", e);
@@ -86,6 +89,16 @@ class WebSocketService {
         break;
       case "audio.tts_started":
         store.setState({ ttsStatus: "Actif", orbStatus: "speaking" });
+        // Sécurité : au bout de 15s, on force le retour à idle si tts_stopped n'est jamais arrivé
+        setTimeout(() => {
+          const s = store.state;
+          if (s.ttsStatus === "Actif" && s.orbStatus === "speaking") {
+            console.warn(
+              "[WS] Sécurité : Timeout TTS détecté, retour permanent en idle.",
+            );
+            store.setState({ ttsStatus: "Inactif", orbStatus: "idle" });
+          }
+        }, 15000);
         break;
       case "audio.tts_stopped":
         store.setState({ ttsStatus: "Inactif" });
@@ -103,6 +116,15 @@ class WebSocketService {
         break;
       case "memory.context_retrieved":
         store.setState({ lastNeuralLog: data });
+        break;
+      case "audio.stt_activated":
+        console.debug("[WS] Micro activé, passage en mode listening.");
+        store.setState({ orbStatus: "listening" });
+        break;
+      case "maps.travel_info":
+        // On s'assure que orbStatus repasse en idle pour que le widget puisse s'afficher
+        // sans être immédiatement fermé par la détection d'interaction dans app.js
+        store.setState({ travelInfo: data, orbStatus: "idle" });
         break;
       default:
         // Pour les autres événements, on peut juste les logger
