@@ -101,6 +101,9 @@ class WebSocketService {
       case "ui.hide_web_results":
         store.setState({ webSearchResults: null });
         break;
+      case "memory.context_retrieved":
+        store.setState({ lastNeuralLog: data });
+        break;
       default:
         // Pour les autres événements, on peut juste les logger
         console.debug(`[WS Event] ${event}`, data);

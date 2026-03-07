@@ -86,7 +86,7 @@ class Brain:
         import json
         
         # 1. Récupération du contexte sémantique (souvenirs liés à la requête)
-        semantic_context = memory.get_relevant_context(text)
+        semantic_context = await memory.get_relevant_context(text)
         enriched_query = text
         if semantic_context:
             enriched_query = f"{text}\n\n[CONTEXTE MÉMOIRE]\n{semantic_context}"

@@ -11,6 +11,7 @@ class StateStore {
       ttsStatus: "Inactif",
       lastUserMessage: "",
       lastJarvisMessage: "",
+      lastNeuralLog: null, // { query, memories: [] }
       activeTab: "general",
       webSearchResults: null, // { query, results: [] }
       printData: {

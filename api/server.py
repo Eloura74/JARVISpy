@@ -190,6 +190,7 @@ def _setup_bus_to_ws_bridge():
         "audio.speech_recognized",
         "brain.thinking",
         "brain.response_generated",
+        "memory.context_retrieved",
         "audio.tts_started",
         "audio.tts_stopped",
         "ui.show_web_results",

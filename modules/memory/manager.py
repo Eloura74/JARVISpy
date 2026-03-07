@@ -1,5 +1,6 @@
 from typing import Dict, List, Optional
 from core.logger import get_logger
+from core.event_bus import bus
 from modules.memory.db import db_manager
 from modules.memory.vector import vector_memory
 
@@ -66,13 +67,20 @@ class MemoryManager:
             prefix = "L'utilisateur a dit: " if role == "user" else "JARVIS a répondu: "
             vector_memory.add_memory(f"{prefix}{content}", {"role": role, "type": "conversation"})
 
-    def get_relevant_context(self, query: str, limit: int = 5) -> str:
+    async def get_relevant_context(self, query: str, limit: int = 5) -> str:
         """
         Récupère le contexte sémantique le plus pertinent pour une requête donnée (RAG).
+        Émet un événement pour le feedback cognitif UI.
         """
         memories = vector_memory.search(query, n_results=limit)
         if not memories:
             return ""
+        
+        # Feedback visuel pour l'utilisateur (Neural Log)
+        await bus.emit("memory.context_retrieved", {
+            "query": query,
+            "memories": memories
+        })
         
         context_parts = ["--- SOUVENIRS PERTINENTS ---"]
         for m in memories:

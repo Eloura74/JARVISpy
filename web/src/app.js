@@ -10,6 +10,7 @@ import { Terminal } from "./components/Terminal/Terminal.js";
 import { Chat } from "./components/Chat/Chat.js";
 import { Settings } from "./components/Settings/Settings.js";
 import { WebSearch } from "./components/WebSearch/WebSearch.js";
+import { NeuralLog } from "./components/NeuralLog/NeuralLog.js";
 
 /**
  * JARVIS App - Orchestrateur Principal Frontend
@@ -29,6 +30,7 @@ class JarvisApp {
     this.chat = new Chat("chat-mount");
     this.settings = new Settings("settings-mount");
     this.websearch = new WebSearch("websearch-mount");
+    this.neurallog = new NeuralLog("neurallog-mount");
 
     // Liaison du bouton paramètres
     document.getElementById("open-settings").addEventListener("click", () => {
