@@ -119,20 +119,20 @@ export class TravelWidget {
       };
     }
 
-    this.widget.classList.remove("hidden");
+    this.widget.classList.remove("hidden", "fade-out");
     this.widget.classList.add("slide-in");
     this.isVisible = true;
 
-    logger.debug("[TRAVEL] Widget affiché.");
+    console.log("[TRAVEL] Widget affiché (isVisible=true)");
   }
 
   hide() {
     if (!this.isVisible) return;
+    this.isVisible = false; // Fermeture logique immédiate
     this.widget.classList.add("fade-out");
     setTimeout(() => {
       this.widget.classList.add("hidden");
       this.widget.classList.remove("fade-out", "slide-in");
-      this.isVisible = false;
     }, 400);
   }
 }

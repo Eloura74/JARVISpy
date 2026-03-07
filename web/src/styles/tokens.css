@@ -4,10 +4,10 @@
  */
 :root {
   /* Colors - Cinematic */
-  --hue-primary: 200; /* Plus bleuté, moins "cyan toxique" */
+  --hue-primary: 210; /* Bleu plus franc */
   --hue-accent: 38;
   --hue-danger: 0;
-  --hue-success: 150;
+  --hue-success: 210; /* Bleu pour succès également */
 
   --primary: hsl(var(--hue-primary), 85%, 55%);
   --primary-glow: hsla(var(--hue-primary), 85%, 55%, 0.2);

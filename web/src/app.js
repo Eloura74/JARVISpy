@@ -46,24 +46,32 @@ class JarvisApp {
     store.subscribe((state) => {
       // 1. Affichage du widget de trajet
       if (state.travelInfo && state.travelInfo !== lastProcessedTravel) {
+        console.log("[APP] Affichage du TravelWidget");
         this.travelWidget.show(state.travelInfo);
         lastProcessedTravel = state.travelInfo;
+        // On "consomme" le message pour éviter une fermeture immédiate
+        lastUserRequest = state.lastUserMessage;
       }
 
       // 2. Fermeture automatique lors d'une nouvelle demande
-      // Désormais, on ferme dès que l'Orb change d'état (écoute ou réflexion)
-      // ou qu'un nouveau message utilisateur arrive.
       const isInteracting =
         state.orbStatus === "listening" ||
         state.orbStatus === "thinking" ||
+        state.audioLevel > 0.15 || // Détection vocale immédiate
         (state.lastUserMessage && state.lastUserMessage !== lastUserRequest);
 
-      if (isInteracting && this.travelWidget.isVisible) {
+      if (this.travelWidget.isVisible && isInteracting) {
         console.log(
-          "[APP] Masquage automatique du TravelWidget (Interaction détectée)",
+          `[APP] Masquage du TravelWidget (Status: ${state.orbStatus}, Audio: ${state.audioLevel.toFixed(2)}, Msg: ${state.lastUserMessage !== lastUserRequest})`,
         );
         this.travelWidget.hide();
+        // Synchronisation immédiate pour éviter les appels multiples
         if (state.lastUserMessage) lastUserRequest = state.lastUserMessage;
+      }
+
+      // Toujours synchroniser le dernier message traité
+      if (state.lastUserMessage) {
+        lastUserRequest = state.lastUserMessage;
       }
     });
 

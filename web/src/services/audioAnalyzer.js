@@ -60,7 +60,7 @@ class AudioAnalyzer {
     const currentStatus = store.state.orbStatus;
 
     if (rms > 0.05) {
-      if (currentStatus === "idle") {
+      if (currentStatus === "idle" || currentStatus === "speaking") {
         store.setState({ orbStatus: "listening" });
       }
       this.silenceCounter = 0; // Reset silence si bruit

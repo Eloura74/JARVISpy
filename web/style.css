@@ -133,8 +133,8 @@ h1 {
   box-shadow: 0 0 8px var(--accent-red);
 }
 .status-indicator.online {
-  background-color: var(--accent-green);
-  box-shadow: 0 0 8px var(--accent-green);
+  background-color: var(--primary-color);
+  box-shadow: 0 0 8px var(--primary-color);
 }
 
 /* MAIN LAYOUT */
@@ -185,8 +185,8 @@ h2 {
   font-weight: 600;
 }
 .value.active {
-  color: var(--accent-green);
-  text-shadow: 0 0 5px var(--accent-green);
+  color: var(--primary-color);
+  text-shadow: 0 0 5px var(--primary-color);
 }
 .value.thinking {
   color: var(--accent-orange);
@@ -261,11 +261,11 @@ h2 {
 .ai-orb.listening .core {
   width: 60px;
   height: 60px;
-  box-shadow: 0 0 40px var(--accent-green);
-  background: radial-gradient(circle, #fff, var(--accent-green));
+  box-shadow: 0 0 40px var(--primary-color);
+  background: radial-gradient(circle, #fff, var(--primary-color));
 }
 .ai-orb.listening .ring {
-  border-color: var(--accent-green);
+  border-color: var(--primary-color);
   opacity: 0.6;
 }
 
