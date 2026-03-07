@@ -1,6 +1,7 @@
 from google import genai
 from google.genai import types
 from typing import List, Dict, Any
+import base64
 
 from core.config import settings
 from core.logger import get_logger
@@ -77,26 +78,60 @@ class Brain:
             await bus.emit("brain.thinking", {"status": False})
 
     async def _generate_response(self, text: str) -> str:
-        """Appel asynchrone sécurisé à l'API Gemini."""
+        """Appel multi-modal avec injection de contexte sémantique (RAG)."""
         if not self.chat_session:
             return "Désolé Monsieur, mon système cognitif est hors ligne."
 
         import asyncio
+        import json
         
-        def blocking_call():
-            # Le SDK gère l'aller-retour complet avec les fonctions automatiquement
-            response = self.chat_session.send_message(text)
+        # 1. Récupération du contexte sémantique (souvenirs liés à la requête)
+        semantic_context = memory.get_relevant_context(text)
+        enriched_query = text
+        if semantic_context:
+            enriched_query = f"{text}\n\n[CONTEXTE MÉMOIRE]\n{semantic_context}"
+
+        def interaction_loop():
+            # Initialisation avec l'entrée utilisateur (éventuellement enrichie)
+            current_input = enriched_query
             
-            # Archivage dans la mémoire à long terme
-            memory.store_message(role="user", content=text)
-            memory.store_message(role="assistant", content=response.text)
+            while True:
+                response = self.chat_session.send_message(current_input)
+                
+                # Vérification si un outil a renvoyé une image (Vision)
+                # Le SDK gère l'exécution des outils, mais si l'un d'eux renvoie 
+                # un JSON spécifique 'image_data', nous devons relancer un tour multi-modal.
+                
+                last_tool_output = None
+                try:
+                    # On fouille dans les parts de la réponse pour voir si un outil a parlé
+                    for part in response.candidates[0].content.parts:
+                        if hasattr(part, 'function_response') and part.function_response:
+                            res = part.function_response.response
+                            if isinstance(res, dict) and res.get("type") == "image_data":
+                                last_tool_output = res
+                except:
+                    pass
+
+                if last_tool_output:
+                    # Tour multi-modal : on envoie l'image en tant que contenu
+                    logger.info("Traitement d'une donnée visuelle reçue par un outil...")
+                    image_part = types.Part.from_bytes(
+                        data=base64.b64decode(last_tool_output["data"]),
+                        mime_type=last_tool_output["mime_type"]
+                    )
+                    current_input = [image_part, "Analyse cette image pour répondre à ma commande initiale."]
+                    continue # On boucle pour envoyer l'image
+                
+                # Sinon, c'est une réponse textuelle finale
+                final_text = response.text
+                
+                # Archivage
+                memory.store_message(role="user", content=text)
+                memory.store_message(role="assistant", content=final_text)
+                return final_text
             
-            # Enregistrement dans le buffer contextuel
-            context_buffer.record(action=text[:60])
-            
-            return response.text
-            
-        return await asyncio.to_thread(blocking_call)
+        return await asyncio.to_thread(interaction_loop)
 
     def start(self):
         """Abonne le cerveau aux flux d'événements (Voix, UI, WebSocket)."""

@@ -12,35 +12,45 @@ logger = get_logger("system.screenshot")
 
 def analyze_screen(monitor_index: int = 1) -> str:
     """
-    Capture et analyse l'écran Windows avec Gemini Vision.
-    Appelle cet outil quand l'utilisateur dit: 'regarde mon écran', 'analyse ce que je vois',
-    'lis ce document', 'explique cette erreur à l'écran', 'traduis ce texte'.
-    monitor_index: 1=écran principal, 2=second écran.
+    Capture l'écran spécifié pour analyse visuelle par Gemini.
+    Appelle cet outil quand l'utilisateur demande d'analyser son écran, de lire un document ouvert
+    ou d'expliquer une erreur visuelle.
+    
+    Args:
+        monitor_index: Index de l'écran (1 pour principal, 2 pour secondaire, etc.).
     """
     try:
         with mss.mss() as sct:
-            monitors = sct.monitors  # [0]=tous, [1+]=écrans individuels
-            idx = min(monitor_index, len(monitors) - 1)
-            screenshot = sct.grab(monitors[idx])
+            monitors = sct.monitors
+            # monitors[0] est l'ensemble des écrans, monitors[1] est le premier écran
+            if monitor_index >= len(monitors):
+                logger.warning(f"Écran {monitor_index} non trouvé, retour sur l'écran 1")
+                monitor_index = 1
+                
+            screenshot = sct.grab(monitors[monitor_index])
 
+        # Conversion en image PIL
         img = Image.frombytes("RGB", screenshot.size, screenshot.bgra, "raw", "BGRX")
 
-        # Redimensionner pour limiter les tokens (max 1280px largeur)
-        if img.width > 1280:
-            ratio = 1280 / img.width
-            img = img.resize((1280, int(img.height * ratio)), Image.LANCZOS)
+        # Redimensionnement optimisé pour l'IA (max 1600px pour plus de détails OCR)
+        if img.width > 1600:
+            ratio = 1600 / img.width
+            img = img.resize((1600, int(img.height * ratio)), Image.LANCZOS)
 
+        # Encodage JPEG progressif haute qualité mais compressé
         buf = io.BytesIO()
-        img.save(buf, format="JPEG", quality=55, optimize=True)
+        img.save(buf, format="JPEG", quality=70, optimize=True)
         b64 = base64.b64encode(buf.getvalue()).decode()
 
-        logger.info(f"Screenshot: monitor {idx} ({img.width}x{img.height})")
+        logger.info(f"Capture écran {monitor_index} réussie ({img.width}x{img.height})")
+        
+        # Format spécifique pour que le Cerveau reconnaisse l'image
         return json.dumps({
-            "type": "screen_capture",
+            "type": "image_data",
             "mime_type": "image/jpeg",
             "data": b64,
-            "resolution": f"{img.width}x{img.height}",
+            "description": f"Capture de l'écran {monitor_index}"
         })
     except Exception as e:
-        logger.error(f"Erreur screenshot: {e}")
-        return f"Impossible de capturer l'écran: {str(e)}"
+        logger.error(f"Erreur lors de la capture d'écran : {e}")
+        return f"Erreur système : impossible de capturer l'écran {monitor_index}."
