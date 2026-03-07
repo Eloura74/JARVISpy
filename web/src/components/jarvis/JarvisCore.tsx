@@ -141,7 +141,7 @@ export const JarvisCore: React.FC<JarvisCoreProps> = ({ mode, size = 540 }) => {
       <div ref={mountRef} className="jarvis-core__canvas" />
       <div className="jarvis-core__label">
         {mode === "idle" && "VEILLE"}
-        {mode === "listening" && "ÉCOUTE"}
+        {mode === "listening" && "VEILLE"}
         {mode === "thinking" && "ANALYSE"}
         {mode === "speaking" && "RÉPONSE"}
       </div>

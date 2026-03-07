@@ -54,19 +54,25 @@ class JarvisApp {
       }
 
       // 2. Fermeture automatique lors d'une nouvelle demande
-      const isInteracting =
-        state.orbStatus === "listening" ||
-        state.orbStatus === "thinking" ||
-        state.audioLevel > 0.15 || // Détection vocale immédiate
-        (state.lastUserMessage && state.lastUserMessage !== lastUserRequest);
+      const isVoiceDetected = state.audioLevel > 0.15;
+      const isNewMessage =
+        state.lastUserMessage && state.lastUserMessage !== lastUserRequest;
+      const isProcessing =
+        state.orbStatus === "listening" || state.orbStatus === "thinking";
 
-      if (this.travelWidget.isVisible && isInteracting) {
+      if (
+        this.travelWidget.isVisible &&
+        (isVoiceDetected || isProcessing || isNewMessage)
+      ) {
         console.log(
-          `[APP] Masquage du TravelWidget (Status: ${state.orbStatus}, Audio: ${state.audioLevel.toFixed(2)}, Msg: ${state.lastUserMessage !== lastUserRequest})`,
+          `[APP] Masquage automatique du widget (Voix: ${isVoiceDetected}, Status: ${state.orbStatus}, NewMsg: ${isNewMessage})`,
         );
         this.travelWidget.hide();
-        // Synchronisation immédiate pour éviter les appels multiples
-        if (state.lastUserMessage) lastUserRequest = state.lastUserMessage;
+
+        // On synchronise lastUserRequest ici pour marquer ce message comme "traité"
+        if (state.lastUserMessage) {
+          lastUserRequest = state.lastUserMessage;
+        }
       }
 
       // Toujours synchroniser le dernier message traité
