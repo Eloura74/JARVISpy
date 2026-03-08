@@ -15,9 +15,10 @@
 
   /* UI Palette */
   --bg-dark: #010306;
+  --bg-image: url("/static/jarvis_bg_deep_minimal.png");
   --panel-bg: hsla(var(--hue-primary), 20%, 3%, 0.4);
   --glass-border: hsla(var(--hue-primary), 100%, 60%, 0.06);
-  --glass-reflection: hsla(var(--hue-primary), 100%, 100%, 0.03);
+  --glass-reflection: hsla(var(--hue-primary), 100%, 100%, 0.53);
 
   /* Typography */
   --font-main: "Rajdhani", sans-serif;
@@ -45,6 +46,7 @@
   --primary-dim: hsla(var(--hue-primary), 50%, 8%, 0.8);
 
   --panel-bg: hsla(var(--hue-primary), 40%, 4%, 0.6);
+  --bg-image: url("/assets/bg_hacking.png");
   --glass-border: hsla(var(--hue-primary), 80%, 45%, 0.12);
   --glass-reflection: hsla(var(--hue-primary), 100%, 100%, 0.04);
 
@@ -62,6 +64,7 @@
   --primary-dim: rgba(10, 5, 0, 0.95);
 
   --panel-bg: rgba(0, 0, 0, 0.85);
+  --bg-image: url("/assets/bg_hacking.png");
   --glass-border: hsla(var(--hue-primary), 100%, 50%, 0.3);
   --glass-reflection: hsla(var(--hue-primary), 100%, 50%, 0.05);
 
