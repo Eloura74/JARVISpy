@@ -35,18 +35,39 @@
   --transition-slow: 0.8s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-/* --- THEME: BRONZE ELEGANT --- */
+/* --- THEME 2: BRONZE ELEGANT (PREMIUM) --- */
 [data-theme="bronze"] {
-  --hue-primary: 38; /* Bronze / Gold hue */
-  --hue-accent: 210; /* Blue accent for contrast */
+  --hue-primary: 32; /* Bronze / Copper */
+  --hue-accent: 210; /* Blue for contrast spikes */
 
-  --primary: hsl(var(--hue-primary), 70%, 55%);
-  --primary-glow: hsla(var(--hue-primary), 70%, 55%, 0.25);
+  --primary: hsl(var(--hue-primary), 75%, 50%);
+  --primary-glow: hsla(var(--hue-primary), 75%, 50%, 0.25);
   --primary-dim: hsla(var(--hue-primary), 50%, 8%, 0.8);
 
   --panel-bg: hsla(var(--hue-primary), 40%, 4%, 0.6);
-  --glass-border: hsla(var(--hue-primary), 80%, 50%, 0.12);
+  --glass-border: hsla(var(--hue-primary), 80%, 45%, 0.12);
   --glass-reflection: hsla(var(--hue-primary), 100%, 100%, 0.04);
 
-  --glow-hard: 0 0 25px hsla(var(--hue-primary), 70%, 55%, 0.3);
+  --glow-soft: 0 0 8px hsla(var(--hue-primary), 75%, 50%, 0.3);
+  --glow-hard: 0 0 25px hsla(var(--hue-primary), 75%, 50%, 0.4);
+}
+
+/* --- THEME 3: HACKER AMBER (TERMINAL) --- */
+[data-theme="hacker"] {
+  --hue-primary: 28; /* Deep Amber / Phosphor */
+  --hue-accent: 120; /* Matrix Green spikes */
+
+  --primary: hsl(var(--hue-primary), 100%, 55%);
+  --primary-glow: hsla(var(--hue-primary), 100%, 55%, 0.3);
+  --primary-dim: rgba(10, 5, 0, 0.95);
+
+  --panel-bg: rgba(0, 0, 0, 0.85);
+  --glass-border: hsla(var(--hue-primary), 100%, 50%, 0.3);
+  --glass-reflection: hsla(var(--hue-primary), 100%, 50%, 0.05);
+
+  --font-main: "Space Mono", monospace;
+  --font-tech: "Space Mono", monospace;
+
+  --glow-soft: 0 0 5px var(--primary-glow);
+  --glow-hard: 0 0 15px var(--primary-glow);
 }

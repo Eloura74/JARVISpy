@@ -221,6 +221,57 @@ body.booting .settings-trigger {
   animation-delay: 1.4s;
 }
 
+/* --- HACKER MODE SPECIFICS --- */
+[data-theme="hacker"] * {
+  font-family: var(--font-mono) !important;
+  text-transform: uppercase;
+  text-shadow: 0 0 5px var(--primary-glow);
+}
+
+[data-theme="hacker"] .glass {
+  background: rgba(0, 0, 0, 0.9) !important;
+  border-color: var(--glass-border) !important;
+  box-shadow: none !important;
+}
+
+[data-theme="hacker"]::after {
+  content: "";
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: repeating-linear-gradient(
+    0deg,
+    rgba(0, 0, 0, 0.1),
+    rgba(0, 0, 0, 0.1) 1px,
+    transparent 1px,
+    transparent 2px
+  );
+  pointer-events: none;
+  z-index: 9999;
+  opacity: 0.3;
+}
+
+@keyframes phosphor-flicker {
+  0% {
+    opacity: 0.98;
+  }
+  5% {
+    opacity: 0.95;
+  }
+  10% {
+    opacity: 0.99;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+[data-theme="hacker"] body {
+  animation: phosphor-flicker 0.1s infinite;
+}
+
 .hide-scroll {
   scrollbar-width: none;
 }

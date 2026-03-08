@@ -81,6 +81,7 @@ export class Settings {
                   <select name="ui_theme" id="ui-theme">
                     <option value="default">SYSTÈME BLEU (ORIGINAL)</option>
                     <option value="bronze">BRONZE ÉLÉGANT (PREMIUM)</option>
+                    <option value="hacker">HACKER AMBER (TERMINAL)</option>
                   </select>
                 </div>
               </div>
