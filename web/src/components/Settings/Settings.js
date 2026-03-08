@@ -75,6 +75,17 @@ export class Settings {
             <!-- TAB: INTERFACES -->
             <div class="tab-pane" id="pane-interfaces">
               <div class="form-section">
+                <div class="section-label">UI & ESTHÉTIQUE</div>
+                <div class="input-field">
+                  <label>THÈME SYSTÈME</label>
+                  <select name="ui_theme" id="ui-theme">
+                    <option value="default">SYSTÈME BLEU (ORIGINAL)</option>
+                    <option value="bronze">BRONZE ÉLÉGANT (PREMIUM)</option>
+                  </select>
+                </div>
+              </div>
+
+              <div class="form-section">
                 <div class="section-label">VISION & BIOMETRICS</div>
                 <div class="toggle-group">
                   <label class="toggle-label">
@@ -253,6 +264,12 @@ export class Settings {
 
   async loadSettings() {
     try {
+      // Chargement du thème local
+      const savedTheme = localStorage.getItem("jarvis_theme") || "default";
+      document.documentElement.setAttribute("data-theme", savedTheme);
+      const themeSelect = this.form.querySelector("#ui-theme");
+      if (themeSelect) themeSelect.value = savedTheme;
+
       const response = await fetch("/api/settings");
       if (!response.ok) return;
       const data = await response.json();
@@ -370,6 +387,11 @@ export class Settings {
       });
 
       if (res.ok) {
+        // Sauvegarde du thème local
+        const theme = payload.ui_theme || "default";
+        localStorage.setItem("jarvis_theme", theme);
+        document.documentElement.setAttribute("data-theme", theme);
+
         await this.saveLocations();
         this.modal.close();
       } else {

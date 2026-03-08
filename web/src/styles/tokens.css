@@ -1,13 +1,9 @@
-/**
- * J.A.R.V.I.S Design Tokens 2.2
- * Refonte Premium HUD avec nuances cyan lumineuses et deep dark backgrounds.
- */
 :root {
-  /* Colors - Cinematic */
-  --hue-primary: 210; /* Bleu plus franc */
+  /* Default Theme: Cinematic Blue (JARVIS Original) */
+  --hue-primary: 210;
   --hue-accent: 38;
   --hue-danger: 0;
-  --hue-success: 210; /* Bleu pour succès également */
+  --hue-success: 210;
 
   --primary: hsl(var(--hue-primary), 85%, 55%);
   --primary-glow: hsla(var(--hue-primary), 85%, 55%, 0.2);
@@ -18,7 +14,7 @@
   --success: hsl(var(--hue-success), 90%, 50%);
 
   /* UI Palette */
-  --bg-dark: #010306; /* Noir abyssal */
+  --bg-dark: #010306;
   --panel-bg: hsla(var(--hue-primary), 20%, 3%, 0.4);
   --glass-border: hsla(var(--hue-primary), 100%, 60%, 0.06);
   --glass-reflection: hsla(var(--hue-primary), 100%, 100%, 0.03);
@@ -37,4 +33,20 @@
   --transition-fast: 0.15s cubic-bezier(0.4, 0, 0.2, 1);
   --transition-normal: 0.35s cubic-bezier(0.4, 0, 0.2, 1);
   --transition-slow: 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* --- THEME: BRONZE ELEGANT --- */
+[data-theme="bronze"] {
+  --hue-primary: 38; /* Bronze / Gold hue */
+  --hue-accent: 210; /* Blue accent for contrast */
+
+  --primary: hsl(var(--hue-primary), 70%, 55%);
+  --primary-glow: hsla(var(--hue-primary), 70%, 55%, 0.25);
+  --primary-dim: hsla(var(--hue-primary), 50%, 8%, 0.8);
+
+  --panel-bg: hsla(var(--hue-primary), 40%, 4%, 0.6);
+  --glass-border: hsla(var(--hue-primary), 80%, 50%, 0.12);
+  --glass-reflection: hsla(var(--hue-primary), 100%, 100%, 0.04);
+
+  --glow-hard: 0 0 25px hsla(var(--hue-primary), 70%, 55%, 0.3);
 }

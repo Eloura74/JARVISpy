@@ -32,6 +32,11 @@ class JarvisApp {
   async init() {
     console.log("[APP] Initialisation J.A.R.V.I.S 0.2...");
 
+    // 0. Séquence de Boot
+    document.body.classList.add("booting");
+    const theme = localStorage.getItem("jarvis_theme") || "default";
+    document.documentElement.setAttribute("data-theme", theme);
+
     // Instanciation des composants
     this.status = new Status("status-mount");
     this.orb = new JarvisCoreBridge("orb-mount");
@@ -44,6 +49,48 @@ class JarvisApp {
     this.calendarWidget = new CalendarWidget();
     this.visionWidget = new VisionWidget();
     this.emailWidget = new EmailWidget();
+
+    // Lancement de la séquence visuelle
+    setTimeout(() => {
+      const elements = [
+        { id: "status-mount", delay: "delay-1" },
+        { id: "analytics-mount", delay: "delay-2" },
+        { id: "orb-mount", delay: "delay-3" },
+        { id: "terminal-mount", delay: "delay-4" },
+        { id: "chat-mount", delay: "delay-5" },
+        { id: "neural-log-container", delay: "delay-5" },
+      ];
+
+      elements.forEach((el) => {
+        const dom = document.getElementById(el.id);
+        if (dom) {
+          dom.classList.add("boot-reveal", el.delay);
+        }
+      });
+
+      document.body.classList.remove("booting");
+
+      this.terminal.addLog(
+        "SYSTÈME: INITIALISATION DES NOYAUX NEURAUX...",
+        "info",
+      );
+      setTimeout(
+        () =>
+          this.terminal.addLog(
+            "SYSTÈME: CHARGEMENT DES PROTOCOLES DE VISION...",
+            "info",
+          ),
+        400,
+      );
+      setTimeout(
+        () =>
+          this.terminal.addLog(
+            "SYSTÈME: CONNEXION AU BUS DE DONNÉES ÉTABLIE.",
+            "success",
+          ),
+        800,
+      );
+    }, 100);
 
     // Liaison du bouton paramètres
     document.getElementById("open-settings").addEventListener("click", () => {

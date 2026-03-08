@@ -2,7 +2,11 @@ import React, { useEffect, useRef } from "react";
 import * as THREE from "three";
 import "./jarvis-core.css";
 import { store } from "../../services/state.js";
-import { CORE_CONFIG, type JarvisMode } from "./jarvisCoreConfig";
+import {
+  CORE_CONFIG,
+  updateJarvisThemeColors,
+  type JarvisMode,
+} from "./jarvisCoreConfig";
 
 import { createPointField, updatePointField } from "./jarvisPointField";
 
@@ -24,6 +28,23 @@ export const JarvisCore: React.FC<JarvisCoreProps> = ({ mode, size = 540 }) => {
   useEffect(() => {
     modeRef.current = mode;
   }, [mode]);
+
+  // Synchronisation du Thème (Bronze / Bleu)
+  useEffect(() => {
+    const applyTheme = () => {
+      const theme =
+        document.documentElement.getAttribute("data-theme") || "default";
+      updateJarvisThemeColors(theme);
+    };
+
+    applyTheme();
+    const obs = new MutationObserver(applyTheme);
+    obs.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ["data-theme"],
+    });
+    return () => obs.disconnect();
+  }, []);
 
   useEffect(() => {
     const sub = store.subscribe((state: any) => {
