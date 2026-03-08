@@ -1,4 +1,4 @@
-import { store } from "../../services/state.js";
+import { decryptText } from "../../utils/textEffect.js";
 
 /**
  * Terminal Component - Affiche les logs techniques de manière élégante
@@ -14,6 +14,7 @@ export class Terminal {
   render() {
     this.container.innerHTML = `
       <div class="terminal glass">
+        <div class="glass-edge"></div>
         <div class="terminal-header">
           <span class="terminal-title">FLUX DE DONNÉES</span>
           <div class="terminal-controls">
@@ -29,18 +30,18 @@ export class Terminal {
     `;
   }
 
-  init() {
-    // Écoute les logs globaux (via console par exemple ou un bus dédié)
-    // Pour cet exemple, on injecte manuellement via une méthode statique
-  }
+  init() {}
 
   addLog(text, type = "system") {
     const line = document.createElement("div");
     line.className = `log-line ${type}`;
     const time = new Date().toLocaleTimeString();
-    line.innerHTML = `<span class="log-time">[${time}]</span> <span class="log-msg">${text}</span>`;
+    line.innerHTML = `<span class="log-time">[${time}]</span> <span class="log-msg"></span>`;
 
     this.logsContainer.appendChild(line);
+    const msgSpan = line.querySelector(".log-msg");
+    decryptText(msgSpan, text, 600);
+
     this.logsContainer.scrollTop = this.logsContainer.scrollHeight;
 
     // Limite à 100 lignes pour la performance

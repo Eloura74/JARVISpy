@@ -51,6 +51,8 @@ class JarvisApp {
     this.emailWidget = new EmailWidget();
 
     // Lancement de la séquence visuelle
+    this.injectDataStreams();
+
     setTimeout(() => {
       const elements = [
         { id: "status-mount", delay: "delay-1" },
@@ -65,6 +67,16 @@ class JarvisApp {
         const dom = document.getElementById(el.id);
         if (dom) {
           dom.classList.add("boot-reveal", el.delay);
+          // Ajout automatique de la bordure sweep sur tous les panneaux glass
+          const glass = dom.querySelector(".glass") || dom;
+          if (
+            glass.classList.contains("glass") &&
+            !glass.querySelector(".glass-edge")
+          ) {
+            const edge = document.createElement("div");
+            edge.className = "glass-edge";
+            glass.prepend(edge);
+          }
         }
       });
 
@@ -223,6 +235,30 @@ class JarvisApp {
       "Système opérationnel. Liaison montante établie.",
       "success",
     );
+  }
+
+  injectDataStreams() {
+    const createStream = (className) => {
+      const el = document.createElement("div");
+      el.className = `data-stream ${className}`;
+      document.body.appendChild(el);
+
+      const update = () => {
+        let text = "";
+        for (let i = 0; i < 8; i++) {
+          text +=
+            Math.random().toString(16).substring(2, 10).toUpperCase() + " ";
+          if (i % 2 === 1) text += "\n";
+        }
+        el.innerText = text;
+      };
+
+      update();
+      setInterval(update, 2000 + Math.random() * 3000);
+    };
+
+    createStream("ds-top-left");
+    createStream("ds-bottom-right");
   }
 }
 
