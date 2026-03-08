@@ -45,9 +45,13 @@
   --primary-glow: hsla(var(--hue-primary), 75%, 50%, 0.25);
   --primary-dim: hsla(var(--hue-primary), 50%, 8%, 0.8);
 
-  --panel-bg: hsla(var(--hue-primary), 40%, 4%, 0.6);
+  --text-main: hsl(var(--hue-primary), 40%, 90%);
+  --text-dim: hsl(var(--hue-primary), 20%, 65%);
+  --text-accent: var(--primary);
+
+  --panel-bg: hsla(var(--hue-primary), 40%, 4%, 0.7);
   --bg-image: url("/assets/bg_hacking.png");
-  --glass-border: hsla(var(--hue-primary), 80%, 45%, 0.12);
+  --glass-border: hsla(var(--hue-primary), 80%, 45%, 0.15);
   --glass-reflection: hsla(var(--hue-primary), 100%, 100%, 0.04);
 
   --glow-soft: 0 0 8px hsla(var(--hue-primary), 75%, 50%, 0.3);
@@ -56,21 +60,25 @@
 
 /* --- THEME 3: HACKER AMBER (TERMINAL) --- */
 [data-theme="hacker"] {
-  --hue-primary: 28; /* Deep Amber / Phosphor */
-  --hue-accent: 120; /* Matrix Green spikes */
+  --hue-primary: 28;
+  --hue-accent: 38;
 
-  --primary: hsl(var(--hue-primary), 100%, 55%);
-  --primary-glow: hsla(var(--hue-primary), 100%, 55%, 0.3);
-  --primary-dim: rgba(10, 5, 0, 0.95);
+  --primary: hsl(var(--hue-primary), 100%, 50%);
+  --primary-glow: hsla(var(--hue-primary), 100%, 50%, 0.4);
+  --primary-dim: rgba(5, 2, 0, 0.98);
 
-  --panel-bg: rgba(0, 0, 0, 0.85);
+  --text-main: #ffcc66; /* Ambre clair chaud */
+  --text-dim: #996633; /* Ambre sombre/cuivré */
+  --text-accent: #ff9900;
+
+  --panel-bg: rgba(0, 0, 0, 0.92);
   --bg-image: url("/assets/bg_hacking.png");
-  --glass-border: hsla(var(--hue-primary), 100%, 50%, 0.3);
-  --glass-reflection: hsla(var(--hue-primary), 100%, 50%, 0.05);
+  --glass-border: hsla(var(--hue-primary), 100%, 50%, 0.35);
+  --glass-reflection: hsla(var(--hue-primary), 100%, 50%, 0.08);
 
   --font-main: "Space Mono", monospace;
   --font-tech: "Space Mono", monospace;
 
-  --glow-soft: 0 0 5px var(--primary-glow);
-  --glow-hard: 0 0 15px var(--primary-glow);
+  --glow-soft: 0 0 8px var(--primary-glow);
+  --glow-hard: 0 0 20px var(--primary-glow);
 }

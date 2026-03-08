@@ -36,10 +36,15 @@ export class Terminal {
     const line = document.createElement("div");
     line.className = `log-line ${type}`;
     const time = new Date().toLocaleTimeString();
-    line.innerHTML = `<span class="log-time">[${time}]</span> <span class="log-msg"></span>`;
+    line.innerHTML = `<span class="log-time" style="color: var(--text-dim); margin-right: 8px;">[${time}]</span> <span class="log-msg"></span>`;
 
     this.logsContainer.appendChild(line);
     const msgSpan = line.querySelector(".log-msg");
+    // Coloration selon le type via CSS variables
+    if (type === "info") msgSpan.style.color = "var(--primary)";
+    if (type === "success") msgSpan.style.color = "var(--text-accent)";
+    if (type === "error") msgSpan.style.color = "#ff4444";
+
     decryptText(msgSpan, text, 600);
 
     this.logsContainer.scrollTop = this.logsContainer.scrollHeight;

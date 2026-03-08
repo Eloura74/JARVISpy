@@ -8,7 +8,7 @@
 
 body {
   background-color: var(--bg-dark);
-  color: #fff;
+  color: var(--text-main);
   font-family: var(--font-main);
   height: 100vh;
   width: 100vw;
@@ -68,15 +68,16 @@ body::after {
 /* Glassmorphism HUD Panels */
 .glass {
   background: var(--panel-bg);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
+  backdrop-filter: blur(25px);
+  -webkit-backdrop-filter: blur(25px);
   border: 1px solid var(--glass-border);
   box-shadow:
-    inset 0 0 20px rgba(255, 255, 255, 0.01),
-    inset 0 1px 0 rgba(255, 255, 255, 0.08),
-    0 15px 40px -10px rgba(0, 0, 0, 0.95);
+    inset 0 0 40px rgba(0, 0, 0, 0.8),
+    inset 0 1px 1px var(--glass-reflection),
+    0 4px 30px rgba(0, 0, 0, 0.8),
+    0 15px 60px -10px rgba(0, 0, 0, 1);
   position: relative;
-  border-radius: 6px;
+  border-radius: 4px;
   overflow: hidden;
 }
 
@@ -136,7 +137,14 @@ input,
 select {
   font-family: var(--font-main);
   outline: none;
-  color: white;
+  color: var(--text-main);
+  font-size: 0.9rem;
+}
+
+.log-line {
+  font-size: 0.85rem;
+  line-height: 1.4;
+  margin-bottom: 4px;
 }
 
 /* =========================
@@ -241,17 +249,20 @@ body.booting .settings-trigger {
   animation-delay: 1.4s;
 }
 
-/* --- HACKER MODE SPECIFICS --- */
-[data-theme="hacker"] * {
-  font-family: var(--font-mono) !important;
-  text-transform: uppercase;
-  text-shadow: 0 0 5px var(--primary-glow);
+[data-theme="hacker"] .glass {
+  background: rgba(0, 0, 0, 0.96) !important;
+  border-color: var(--glass-border) !important;
+  box-shadow: inset 0 0 15px var(--primary-glow) !important;
 }
 
-[data-theme="hacker"] .glass {
-  background: rgba(0, 0, 0, 0.9) !important;
-  border-color: var(--glass-border) !important;
-  box-shadow: none !important;
+[data-theme="hacker"] .terminal-controls,
+[data-theme="hacker"] .dot {
+  display: none !important;
+}
+
+[data-theme="hacker"] .terminal-header {
+  border-bottom: 1px solid var(--glass-border);
+  background: rgba(20, 10, 0, 0.5);
 }
 
 [data-theme="hacker"]::after {
