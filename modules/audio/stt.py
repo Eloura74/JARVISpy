@@ -16,11 +16,13 @@ class SpeechToText:
     Module d'écoute de JARVIS. Utilise le micro système pour capter la voix et Faster-Whisper pour STT.
     """
     def __init__(self):
+        logger.info("Initialisation d'une NOUVELLE instance SpeechToText...")
         self.recognizer = sr.Recognizer()
         self.microphone = None
         self.is_listening = False
         self.stop_listening_fn = None
         self.is_suspended = False  # True quand TTS parle
+        self.manual_enabled = True # État souhaité par l'utilisateur (toggle bouton)
         
         # Paramètres de détection de parole
         self.recognizer.dynamic_energy_threshold = True
@@ -89,6 +91,11 @@ class SpeechToText:
 
     def _callback(self, recognizer, audio):
         """Appelée automatiquement dès qu'une phrase est captée (background thread)"""
+        logger.info(f"[_callback] Phrase détectée. manual_enabled={self.manual_enabled}, is_suspended={self.is_suspended}")
+        if not self.manual_enabled:
+            logger.info("Audio ignoré (Micro désactivé manuellement via manual_enabled=False)")
+            return
+
         if self.is_suspended:
             logger.debug("Audio ignoré (J.A.R.V.I.S parle)")
             return
@@ -225,11 +232,31 @@ class SpeechToText:
             # On attend que l'écho se dissipe et que le thread de transcription se calme
             await asyncio.sleep(1.2)
             self.is_suspended = False
-            self.start(recalibrate=False)
-            await bus.emit("audio.stt_activated", {})
-            logger.debug("Micro STT réactivé après TTS.")
+            
+            logger.debug(f"[_on_tts_stop] manual_enabled={self.manual_enabled}")
+            # On ne redémarre l'écoute que si l'utilisateur ne l'a pas coupée manuellement
+            if self.manual_enabled:
+                self.start(recalibrate=False)
+                await bus.emit("audio.stt_activated", {})
+                logger.debug("Micro STT réactivé après TTS.")
+            else:
+                logger.info("Micro STT RESTE COUPÉ après TTS car manual_enabled=False.")
+                
         except Exception as e:
             logger.error(f"Erreur dans _on_tts_stop (redémarrage STT): {e}")
+
+    async def _on_start_stt(self, payload: Dict[str, Any]):
+        """Handler pour l'activation manuelle du STT via UI"""
+        logger.info(">>> EVENT: ws.audio.start_stt reçu -> Activation manuelle")
+        self.manual_enabled = True
+        self.start(recalibrate=True)
+
+    async def _on_stop_stt(self, payload: Dict[str, Any]):
+        """Handler pour la désactivation manuelle du STT via UI"""
+        logger.info(">>> EVENT: ws.audio.stop_stt reçu -> Désactivation manuelle")
+        self.manual_enabled = False
+        self.stop(is_temporary=False, wait=False)
+        logger.info(f"manual_enabled est maintenant à {self.manual_enabled}")
 
 # Instance globale
 stt_instance = SpeechToText()
@@ -237,3 +264,5 @@ stt_instance = SpeechToText()
 # On doit abonner stt_instance manuellement pour éviter boucle d'import (si appelé dans main)
 bus.subscribe("audio.tts_started", stt_instance._on_tts_start)
 bus.subscribe("audio.tts_stopped", stt_instance._on_tts_stop)
+bus.subscribe("ws.audio.start_stt", stt_instance._on_start_stt)
+bus.subscribe("ws.audio.stop_stt", stt_instance._on_stop_stt)

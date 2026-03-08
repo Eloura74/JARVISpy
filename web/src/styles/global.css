@@ -360,6 +360,87 @@ body.booting .settings-trigger {
   text-align: right;
 }
 
+/* --- SYSTEM CONTROLS --- */
+.system-controls {
+  position: fixed;
+  bottom: 8vh; /* Plus bas, sous la sphère */
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 30px; /* Plus d'espace */
+  z-index: 9000; /* Priorité maximale */
+}
+
+.btn-ctrl {
+  width: 55px;
+  height: 55px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.4);
+  border: 1px solid var(--glass-border);
+  color: var(--text-dim);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  cursor: pointer;
+  backdrop-filter: blur(15px);
+  box-shadow: 0 0 15px rgba(0, 0, 0, 0.5);
+}
+
+.btn-ctrl:hover {
+  color: var(--primary);
+  border-color: var(--primary);
+  box-shadow: 0 0 25px var(--primary-glow);
+  transform: scale(1.1);
+}
+
+.btn-ctrl svg {
+  width: 26px;
+  height: 26px;
+}
+
+.btn-ctrl.active {
+  color: #fff;
+  background: var(--primary);
+  border-color: #fff;
+  box-shadow: 0 0 30px var(--primary-glow);
+  animation: ctrl-pulse 1.2s infinite;
+}
+
+.btn-ctrl.muted {
+  color: #fff;
+  background: var(--accent); /* Orange */
+  border-color: #fff;
+  box-shadow: 0 0 25px rgba(255, 165, 0, 0.5);
+  animation: none;
+}
+
+@keyframes ctrl-pulse {
+  0% {
+    transform: scale(1);
+    box-shadow: 0 0 10px var(--primary-glow);
+  }
+  50% {
+    transform: scale(1.15);
+    box-shadow: 0 0 35px var(--primary-glow);
+  }
+  100% {
+    transform: scale(1);
+    box-shadow: 0 0 10px var(--primary-glow);
+  }
+}
+
+.btn-ctrl.power {
+  border-color: rgba(255, 68, 68, 0.3);
+}
+
+.btn-ctrl.power:hover {
+  color: #fff;
+  background: #ff4444;
+  border-color: #fff;
+  box-shadow: 0 0 40px rgba(255, 68, 68, 0.8);
+}
+
 .hide-scroll {
   scrollbar-width: none;
 }

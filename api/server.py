@@ -1,5 +1,6 @@
 import os
 import json
+import asyncio
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
@@ -142,8 +143,15 @@ async def websocket_endpoint(websocket: WebSocket):
                 logger.debug(f"Message WS reçu [{event_type}]: {payload}")
                 
                 # Relais du message vers le bus d'événements interne
-                # Ex: "ui.button_clicked", "audio.start_listening"
-                await bus.emit(f"ws.{event_type}", payload)
+                # On s'assure de l'envoyer sur la boucle principale si elle est définie
+                # pour garder une cohérence d'état (ex: toggle micro)
+                main_loop = getattr(bus, 'main_loop', None)
+                if main_loop and not main_loop.is_closed():
+                    main_loop.call_soon_threadsafe(
+                        lambda: asyncio.create_task(bus.emit(f"ws.{event_type}", payload))
+                    )
+                else:
+                    await bus.emit(f"ws.{event_type}", payload)
                 
             except json.JSONDecodeError:
                 logger.warning(f"Message non-JSON reçu sur le WebSocket: {data[:50]}...")

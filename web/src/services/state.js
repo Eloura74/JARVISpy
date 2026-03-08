@@ -22,6 +22,7 @@ class StateStore {
         moonraker: null,
       },
       audioLevel: 0, // 0.0 à 1.0 (RMS)
+      sttEnabled: true, // État de l'écoute (Toggle Utilisateur)
     };
 
     this.listeners = new Set();

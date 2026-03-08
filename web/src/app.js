@@ -53,6 +53,7 @@ class JarvisApp {
 
     // Lancement de la séquence visuelle
     this.injectDataStreams();
+    this.injectSystemControls();
 
     setTimeout(() => {
       const elements = [
@@ -273,6 +274,96 @@ class JarvisApp {
 
     createStream("ds-top-left");
     createStream("ds-bottom-right");
+  }
+
+  injectSystemControls() {
+    const controls = document.createElement("div");
+    controls.className = "system-controls";
+    controls.innerHTML = `
+      <button class="btn-ctrl" id="btn-mic-toggle" title="Toggle Micro">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
+          <path d="M19 10v2a7 7 0 0 1-14 0v-2M12 19v4M8 23h8"/>
+        </svg>
+      </button>
+      <button class="btn-ctrl power" id="btn-app-kill" title="Close App">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M18.36 6.64a9 9 0 1 1-12.73 0M12 2v10"/>
+        </svg>
+      </button>
+    `;
+    document.body.appendChild(controls);
+
+    const btnMic = controls.querySelector("#btn-mic-toggle");
+    const btnKill = controls.querySelector("#btn-app-kill");
+
+    btnMic.addEventListener("click", () => {
+      const isEnabled = store.state.sttEnabled;
+      const nextState = !isEnabled;
+
+      if (this.terminal) {
+        this.terminal.addLog(
+          `SYSTÈME: ${nextState ? "ACTIVATION" : "DÉSACTIVATION"} DE L'ÉCOUTE...`,
+          nextState ? "success" : "error",
+        );
+      }
+
+      // Mise à jour immédiate pour feedback visuel
+      store.setState({ sttEnabled: nextState });
+
+      if (nextState) {
+        wsService.send("audio.start_stt");
+      } else {
+        wsService.send("audio.stop_stt");
+        store.setState({ orbStatus: "idle" });
+      }
+    });
+
+    btnKill.addEventListener("click", () => {
+      if (this.terminal) {
+        this.terminal.addLog(
+          "SYSTÈME: PROCÉDURE DE FERMETURE ÉTABLIE.",
+          "error",
+        );
+      }
+      wsService.send("system.shutdown");
+
+      // Animation de sortie
+      document.body.style.pointerEvents = "none";
+      const overlay = document.createElement("div");
+      overlay.style.position = "fixed";
+      overlay.style.top = "0";
+      overlay.style.left = "0";
+      overlay.style.width = "100%";
+      overlay.style.height = "100%";
+      overlay.style.background = "#000";
+      overlay.style.opacity = "0";
+      overlay.style.transition = "opacity 2s ease";
+      overlay.style.zIndex = "9999";
+      document.body.appendChild(overlay);
+
+      setTimeout(() => (overlay.style.opacity = "1"), 50);
+
+      setTimeout(() => {
+        window.close();
+        document.body.innerHTML =
+          "<div style='color:var(--primary); font-family:var(--font-mono); display:flex; height:100vh; width:100vw; align-items:center; justify-content:center; text-align:center; background:#000;'>SYSTEM OFFLINE<br>AU REVOIR, MONSIEUR.</div>";
+      }, 2500);
+    });
+
+    store.subscribe((state) => {
+      if (btnMic) {
+        if (state.sttEnabled) {
+          btnMic.classList.remove("muted");
+          // On peut garder 'active' si on veut un effet spécifique quand ça écoute,
+          // mais l'utilisateur veut "transparent" (style normal) par défaut quand ça écoute.
+          btnMic.classList.remove("active");
+        } else {
+          btnMic.classList.add("muted");
+          btnMic.classList.remove("active");
+        }
+      }
+    });
   }
 }
 
