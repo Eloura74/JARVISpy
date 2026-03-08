@@ -1,5 +1,6 @@
 import { wsService } from "./services/websocket.js";
 import { store } from "./services/state.js";
+import { decryptText } from "./utils/textEffect.js";
 
 // Components
 import { Status } from "./components/Status/Status.js";
@@ -55,53 +56,66 @@ class JarvisApp {
 
     setTimeout(() => {
       const elements = [
-        { id: "status-mount", delay: "delay-1" },
-        { id: "analytics-mount", delay: "delay-2" },
-        { id: "orb-mount", delay: "delay-3" },
-        { id: "terminal-mount", delay: "delay-4" },
-        { id: "chat-mount", delay: "delay-5" },
-        { id: "neural-log-container", delay: "delay-5" },
+        { id: "status-mount", delay: 0 },
+        { id: "analytics-mount", delay: 300 },
+        { id: "orb-mount", delay: 600 },
+        { id: "terminal-mount", delay: 900 },
+        { id: "chat-mount", delay: 1200 },
+        { id: "neural-log-container", delay: 1200 },
       ];
 
       elements.forEach((el) => {
-        const dom = document.getElementById(el.id);
-        if (dom) {
-          dom.classList.add("boot-reveal", el.delay);
-          // Ajout automatique de la bordure sweep sur tous les panneaux glass
-          const glass = dom.querySelector(".glass") || dom;
-          if (
-            glass.classList.contains("glass") &&
-            !glass.querySelector(".glass-edge")
-          ) {
-            const edge = document.createElement("div");
-            edge.className = "glass-edge";
-            glass.prepend(edge);
+        setTimeout(() => {
+          const dom = document.getElementById(el.id);
+          if (dom) {
+            dom.classList.add("boot-reveal");
+
+            // Effet de décryptage sur les titres du widget
+            const textNodes = dom.querySelectorAll(
+              ".terminal-title, .section-label, h2, .label-id, .logo-text",
+            );
+            textNodes.forEach((node) => {
+              const originalText = node.innerText;
+              decryptText(node, originalText, 800);
+            });
+
+            // Ajout automatique de la bordure sweep
+            const glass = dom.querySelector(".glass") || dom;
+            if (
+              glass.classList.contains("glass") &&
+              !glass.querySelector(".glass-edge")
+            ) {
+              const edge = document.createElement("div");
+              edge.className = "glass-edge";
+              glass.prepend(edge);
+            }
           }
-        }
+        }, el.delay);
       });
 
-      document.body.classList.remove("booting");
-
-      this.terminal.addLog(
-        "SYSTÈME: INITIALISATION DES NOYAUX NEURAUX...",
-        "info",
-      );
-      setTimeout(
-        () =>
-          this.terminal.addLog(
-            "SYSTÈME: CHARGEMENT DES PROTOCOLES DE VISION...",
-            "info",
-          ),
-        400,
-      );
-      setTimeout(
-        () =>
-          this.terminal.addLog(
-            "SYSTÈME: CONNEXION AU BUS DE DONNÉES ÉTABLIE.",
-            "success",
-          ),
-        800,
-      );
+      setTimeout(() => {
+        document.body.classList.remove("booting");
+        this.terminal.addLog(
+          "SYSTÈME: INITIALISATION DES NOYAUX NEURAUX...",
+          "info",
+        );
+        setTimeout(
+          () =>
+            this.terminal.addLog(
+              "SYSTÈME: CHARGEMENT DES PROTOCOLES DE VISION...",
+              "info",
+            ),
+          400,
+        );
+        setTimeout(
+          () =>
+            this.terminal.addLog(
+              "SYSTÈME: CONNEXION AU BUS DE DONNÉES ÉTABLIE.",
+              "success",
+            ),
+          800,
+        );
+      }, 1500);
     }, 100);
 
     // Liaison du bouton paramètres
