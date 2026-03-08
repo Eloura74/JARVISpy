@@ -12,10 +12,10 @@ export const JARVIS_COLORS: Record<JarvisMode, THREE.Color> = {
 export const CORE_CONFIG = {
   mainCount: 1400,
   haloCount: 500,
-  radius: 1.65,
-  depth: 1.2,
-  basePointSize: 7,
-  haloPointSize: 4.5,
+  radius: 1.6,
+  depth: 1.1,
+  basePointSize: 4.0, // Finesse Pro
+  haloPointSize: 3.0, // Finesse Pro
   smoothing: 0.12,
   cameraZ: 5.6,
 };

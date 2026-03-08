@@ -1,43 +1,40 @@
 import * as THREE from "three";
-import { pointFragmentShader, pointVertexShader } from "./jarvisCoreShaders";
-import type { JarvisMode } from "./jarvisCoreConfig";
-import { JARVIS_COLORS } from "./jarvisCoreConfig";
+import { JARVIS_COLORS, type JarvisMode } from "./jarvisCoreConfig";
+import { pointVertexShader, pointFragmentShader } from "./jarvisCoreShaders";
 
-type PointFieldOptions = {
+export interface PointField {
+  geometry: THREE.BufferGeometry;
+  material: THREE.ShaderMaterial;
+  points: THREE.Points;
+  pos: Float32Array;
+  base: Float32Array;
+  color: Float32Array;
+  alpha: Float32Array;
+  size: Float32Array;
+  metaR: Float32Array;
+  metaA: Float32Array;
+  metaP: Float32Array;
+  metaL: Float32Array;
+}
+
+/**
+ * INITIALISATION V5.7.1 - SYNCHRONISATION ABSOLUE
+ */
+export function createPointField(config: {
   count: number;
   radius: number;
   depth: number;
   pointSize: number;
   opacity: number;
-};
+}): PointField {
+  const geometry = new THREE.BufferGeometry();
+  const count = config.count;
 
-export type PointField = {
-  points: THREE.Points;
-  geometry: THREE.BufferGeometry;
-  material: THREE.ShaderMaterial;
-  base: Float32Array;
-  pos: Float32Array;
-  color: Float32Array;
-  size: Float32Array;
-  alpha: Float32Array;
-  metaR: Float32Array;
-  metaA: Float32Array;
-  metaP: Float32Array;
-  metaL: Float32Array;
-};
-
-export function createPointField({
-  count,
-  radius,
-  depth,
-  pointSize,
-  opacity,
-}: PointFieldOptions): PointField {
-  const base = new Float32Array(count * 3);
   const pos = new Float32Array(count * 3);
+  const base = new Float32Array(count * 3);
   const color = new Float32Array(count * 3);
-  const size = new Float32Array(count);
   const alpha = new Float32Array(count);
+  const size = new Float32Array(count);
 
   const metaR = new Float32Array(count);
   const metaA = new Float32Array(count);
@@ -46,57 +43,64 @@ export function createPointField({
 
   for (let i = 0; i < count; i++) {
     const i3 = i * 3;
-    const a = Math.random() * Math.PI * 2;
-    const r = Math.pow(Math.random(), 0.75) * radius;
-    const z = (Math.random() - 0.5) * depth;
-    const lift = (Math.random() - 0.5) * 0.8;
 
-    base[i3] = Math.cos(a) * r;
-    base[i3 + 1] = Math.sin(a) * r + lift * 0.15;
-    base[i3 + 2] = z;
+    // Distribution polaire pro (Cohérente avec updatePointField)
+    const r = config.radius * (0.35 + Math.random() * 0.65);
+    const theta = Math.random() * Math.PI * 2;
+    const p = Math.random() * Math.PI * 2;
+    const layer = Math.floor(Math.random() * 5);
 
-    pos[i3] = base[i3];
-    pos[i3 + 1] = base[i3 + 1];
-    pos[i3 + 2] = base[i3 + 2];
+    // Position initiale rattachée à la structure d'animation
+    // On calcule la position à t=0 pour une synchro parfaite
+    const x = Math.cos(theta) * r;
+    const y = Math.sin(theta) * r;
+    const lift = Math.sin(r * 4.0 + p) * 0.03;
+    const z = Math.cos(r * 2.5 + p) * 0.15 + (Math.random() - 0.5) * 0.1;
 
-    size[i] = pointSize + Math.random() * pointSize * 0.8;
-    alpha[i] = opacity * (0.35 + Math.random() * 0.65);
+    pos[i3] = x;
+    pos[i3 + 1] = y + lift;
+    pos[i3 + 2] = z;
+
+    base[i3] = x;
+    base[i3 + 1] = y; // On garde y de base sans lift
+    base[i3 + 2] = z; // On garde z de base
 
     metaR[i] = r;
-    metaA[i] = a;
-    metaP[i] = Math.random() * Math.PI * 2;
-    metaL[i] = 0.6 + Math.random() * 1.8;
+    metaA[i] = theta;
+    metaP[i] = p;
+    metaL[i] = layer;
+
+    // Finesse V5.8
+    size[i] = 4.2 + layer * 1.2;
+    color[i3] = JARVIS_COLORS.idle.r;
+    color[i3 + 1] = JARVIS_COLORS.idle.g;
+    color[i3 + 2] = JARVIS_COLORS.idle.b;
+    alpha[i] = 0.28;
   }
 
-  const geometry = new THREE.BufferGeometry();
   geometry.setAttribute("position", new THREE.BufferAttribute(pos, 3));
   geometry.setAttribute("aColor", new THREE.BufferAttribute(color, 3));
-  geometry.setAttribute("aSize", new THREE.BufferAttribute(size, 1));
   geometry.setAttribute("aAlpha", new THREE.BufferAttribute(alpha, 1));
+  geometry.setAttribute("aSize", new THREE.BufferAttribute(size, 1));
 
   const material = new THREE.ShaderMaterial({
+    uniforms: { uTime: { value: 0 } },
     vertexShader: pointVertexShader,
     fragmentShader: pointFragmentShader,
-    uniforms: {
-      uTime: { value: 0 },
-      uPixelRatio: { value: Math.min(window.devicePixelRatio, 2) },
-    },
     transparent: true,
-    depthWrite: false,
     blending: THREE.AdditiveBlending,
+    depthTest: false,
   });
 
-  const points = new THREE.Points(geometry, material);
-
   return {
-    points,
     geometry,
     material,
-    base,
+    points: new THREE.Points(geometry, material),
     pos,
+    base,
     color,
-    size,
     alpha,
+    size,
     metaR,
     metaA,
     metaP,
@@ -112,87 +116,49 @@ export function updatePointField(
   scale = 1,
 ) {
   const target = JARVIS_COLORS[mode];
-
   const isSpeaking = mode === "speaking";
-  const isListening = mode === "listening";
-  const isThinking = mode === "thinking";
+  const cleanAudio = audioLevel < 0.05 ? 0 : audioLevel;
 
-  // Paramètres V3 Base : Plus circulaire et organique
-  const waveFreq = isSpeaking
-    ? 1.3
-    : isListening
-      ? 6.8
-      : isThinking
-        ? 1.8
-        : 1.0;
-  const waveAmp = isSpeaking
-    ? 0.45
-    : isListening
-      ? 0.38
-      : isThinking
-        ? 0.15
-        : 0.08;
-  const pulse = isSpeaking ? 1.8 : isListening ? 1.3 : isThinking ? 0.6 : 0.45;
+  const waveFreq = 0.8;
+  const waveAmp = 0.08;
+  const audioBoost = cleanAudio * (isSpeaking ? 1.0 : 0.6);
 
   for (let i = 0; i < field.metaR.length; i++) {
     const i3 = i * 3;
-
     const r = field.metaR[i];
     const a = field.metaA[i];
     const p = field.metaP[i];
     const layer = field.metaL[i];
 
-    // Wave pattern circulaire (Base)
     const wave =
-      Math.sin(
-        time * (waveFreq + layer * 0.3) - r * (isSpeaking ? 1.4 : 5.0) + p,
-      ) *
-      (waveAmp + audioLevel * 0.5 * pulse);
+      Math.sin(time * (waveFreq + layer * 0.4) - r * 3.5 + p) *
+      (waveAmp + audioBoost * 0.04);
+    const angle =
+      a + time * 0.04 * (0.3 + layer * 0.4) + Math.sin(time * 0.6 + p) * 0.05;
 
-    // Turbulence plus fluide que nerveuse
-    const swirl =
-      Math.sin(time * (isSpeaking ? 0.15 : 1.4) + p) * 0.12 +
-      Math.cos(time * 0.3 + r) * 0.06;
+    // Grossissement EXTREMEMENT fin (1.015 max)
+    const baseExpansion = isSpeaking ? 1.015 : 1.0;
+    const radial = r * (baseExpansion + cleanAudio * 0.04 + wave * 0.03);
 
-    const angle = a + time * 0.04 * (0.4 + layer * 0.3) + swirl;
-
-    // Expansion radiale sans déformation "fenêtre"
-    const radialBase = 1.0;
-    const radialFactor = isSpeaking ? 0.35 : isListening ? 0.25 : 0.12;
-    const radial = r * (radialBase + wave * radialFactor);
-
-    // Suppression du stretchX/Y pour garder la sphère pure
-    const liftFreq = isListening ? 6.5 : 2.0;
-    const lift =
-      Math.sin(time * liftFreq + r * 4 + p) * (0.05 + audioLevel * 0.2);
+    const lift = Math.sin(time * 2.5 + r * 4.0 + p) * 0.03;
 
     field.pos[i3] = Math.cos(angle) * radial * scale;
     field.pos[i3 + 1] = Math.sin(angle) * radial + lift;
     field.pos[i3 + 2] =
       field.base[i3 + 2] +
-      Math.cos(time * (1.2 + layer) + r * 2.5 + p) * (0.2 + audioLevel * 0.6);
+      Math.cos(time * (1.2 + layer) + r * 2.5 + p) * (0.15 + audioBoost * 0.1);
 
-    // Glow tempéré (Cyan à Violet)
-    const glowBoost = isSpeaking ? 0.2 + audioLevel * 0.6 : audioLevel * 0.3;
-    const brightness = 0.82 + glowBoost + Math.max(0, wave) * 0.35;
+    const colorSpeed = 0.06;
+    field.color[i3] += (target.r - field.color[i3]) * colorSpeed;
+    field.color[i3 + 1] += (target.g - field.color[i3 + 1]) * colorSpeed;
+    field.color[i3 + 2] += (target.b - field.color[i3 + 2]) * colorSpeed;
 
-    field.color[i3] = target.r * brightness;
-    field.color[i3 + 1] = target.g * brightness;
-    field.color[i3 + 2] = target.b * brightness;
+    const targetAlpha =
+      0.28 + Math.abs(wave) * 0.35 + (isSpeaking ? cleanAudio * 0.1 : 0);
+    field.alpha[i] = field.alpha[i] * 0.94 + targetAlpha * 0.06;
 
-    field.alpha[i] = Math.min(
-      0.9,
-      0.3 + audioLevel * 0.5 + Math.abs(wave) * 0.5,
-    );
-
-    // Taille : Seul changement majeur pour Jarvis
-    const targetSize =
-      (isSpeaking ? 8.5 : isListening ? 9.0 : 5.0) +
-      layer * 3.0 +
-      audioLevel * (isSpeaking ? 24 : 16) +
-      Math.abs(wave) * 10;
-
-    field.size[i] = field.size[i] * 0.94 + targetSize * 0.06;
+    const targetSize = 4.2 + layer * 1.2 + (isSpeaking ? cleanAudio * 1.5 : 0);
+    field.size[i] = field.size[i] * 0.92 + targetSize * 0.08;
   }
 
   field.geometry.attributes.position.needsUpdate = true;

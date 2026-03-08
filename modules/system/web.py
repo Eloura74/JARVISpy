@@ -93,6 +93,7 @@ def direct_google_search(query: str) -> str:
     """
     Effectue une recherche directe sur Google en ouvrant un nouvel onglet dans le navigateur de l'utilisateur.
     À utiliser PAR DÉFAUT quand l'utilisateur dit "recherche [X]" ou "cherche sur google".
+    NE PAS UTILISER pour répondre à des questions de culture générale, théoriques ou d'humour que vous pouvez traiter vous-même.
     """
     import subprocess
     import shutil

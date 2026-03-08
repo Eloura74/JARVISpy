@@ -1,79 +1,86 @@
+/* JARVIS-CORE V5.7 - Harmonisation & Finesse Absolue */
+
 .jarvis-core {
   position: relative;
+  width: 100%;
+  height: 100%;
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 540px;
-  height: 540px;
-  pointer-events: none;
-  --core-color: #00d9ff;
-}
-
-.jarvis-core--idle {
-  --core-color: #00d9ff;
-}
-
-.jarvis-core--listening {
-  --core-color: #0066ff;
-}
-
-.jarvis-core--thinking {
-  --core-color: #69a8ff;
-}
-
-.jarvis-core--speaking {
-  --core-color: #e8fdff;
 }
 
 .jarvis-core__canvas {
-  position: relative;
-  z-index: 2;
-  filter: drop-shadow(
-      0 0 18px color-mix(in srgb, var(--core-color) 45%, transparent)
-    )
-    drop-shadow(0 0 60px color-mix(in srgb, var(--core-color) 18%, transparent));
+  width: 102%; /* Leger depassement pour eviter les bords tronques */
+  height: 102%;
+  z-index: 5;
+  /* AUCUN FILTRE CSS ICI - La netteté vient du WebGL */
+  filter: none !important;
 }
 
 .jarvis-core__glow {
   position: absolute;
-  inset: 23%;
-  z-index: 1;
-  border-radius: 50%;
+  width: 140%;
+  height: 140%;
   background: radial-gradient(
     circle,
-    color-mix(in srgb, var(--core-color) 18%, transparent) 0%,
-    color-mix(in srgb, var(--core-color) 8%, transparent) 35%,
-    transparent 72%
+    rgba(0, 210, 255, 0.06) 0%,
+    transparent 65%
   );
-  filter: blur(18px);
-  animation: coreGlow 4.8s ease-in-out infinite;
+  pointer-events: none;
+  z-index: 1;
+  opacity: 0.5;
 }
 
 .jarvis-core__label {
   position: absolute;
-  bottom: 24px;
+  bottom: -45px;
   left: 50%;
-  z-index: 3;
   transform: translateX(-50%);
-  padding: 7px 18px;
-  border-radius: 4px;
-  font-size: 0.72rem;
-  letter-spacing: 0.45em;
-  color: #d9fbff;
-  border: 1px solid color-mix(in srgb, var(--core-color) 28%, transparent);
-  background: rgba(2, 10, 20, 0.46);
-  backdrop-filter: blur(8px);
-  text-shadow: 0 0 12px color-mix(in srgb, var(--core-color) 60%, transparent);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  pointer-events: none;
+  z-index: 10;
 }
 
-@keyframes coreGlow {
-  0%,
-  100% {
-    transform: scale(0.96);
-    opacity: 0.72;
+.label-status {
+  font-family: "Orbitron", sans-serif;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 6px;
+  color: #00d9ff;
+  text-shadow: 0 0 10px rgba(0, 217, 255, 0.3);
+  text-transform: uppercase;
+  opacity: 0.7;
+}
+
+.label-id {
+  font-family: "Space Mono", monospace;
+  font-size: 0.45rem;
+  letter-spacing: 3px;
+  color: rgba(0, 217, 255, 0.2);
+}
+
+/* Animations d'etats (Uniquement sur le label pour ne pas casser la netteté de l'Orb) */
+.jarvis-core--speaking .label-status {
+  color: #b06eff;
+  text-shadow: 0 0 15px rgba(176, 110, 255, 0.4);
+  animation: label-flicker 0.4s infinite alternate;
+}
+
+@keyframes label-flicker {
+  from {
+    opacity: 0.3;
   }
-  50% {
-    transform: scale(1.06);
-    opacity: 1;
+  to {
+    opacity: 0.8;
   }
+}
+
+/* On s'assure qu'aucun mode ne rajoute de filtre au canvas */
+.jarvis-core--listening .jarvis-core__canvas,
+.jarvis-core--thinking .jarvis-core__canvas,
+.jarvis-core--speaking .jarvis-core__canvas {
+  filter: none !important;
 }
