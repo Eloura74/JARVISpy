@@ -1,4 +1,4 @@
-/* JARVIS-CORE V5.7 - Harmonisation & Finesse Absolue */
+/* JARVIS-CORE V5.17 - FINAL HUD ENGINE */
 
 .jarvis-core {
   position: relative;
@@ -7,80 +7,58 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  overflow: visible;
 }
 
 .jarvis-core__canvas {
-  width: 102%; /* Leger depassement pour eviter les bords tronques */
-  height: 102%;
-  z-index: 5;
-  /* AUCUN FILTRE CSS ICI - La netteté vient du WebGL */
+  width: 100%;
+  height: 100%;
+  max-width: 540px;
+  max-height: 540px;
   filter: none !important;
+  z-index: 10;
 }
 
 .jarvis-core__glow {
   position: absolute;
+  top: 50%;
+  left: 50%;
   width: 140%;
   height: 140%;
+  transform: translate(-50%, -50%);
   background: radial-gradient(
     circle,
-    rgba(0, 210, 255, 0.06) 0%,
-    transparent 65%
+    rgba(0, 150, 255, 0.03) 0%,
+    transparent 60%
   );
   pointer-events: none;
   z-index: 1;
-  opacity: 0.5;
+  transition: all 1.5s ease;
 }
 
 .jarvis-core__label {
   position: absolute;
-  bottom: -45px;
+  bottom: -40px;
   left: 50%;
   transform: translateX(-50%);
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 2px;
+  gap: 4px;
   pointer-events: none;
-  z-index: 10;
+  font-family: "Rajdhani", sans-serif;
+  opacity: 0.5;
+  letter-spacing: 0.2em;
 }
 
 .label-status {
-  font-family: "Orbitron", sans-serif;
   font-size: 0.7rem;
-  font-weight: 700;
-  letter-spacing: 6px;
-  color: #00d9ff;
-  text-shadow: 0 0 10px rgba(0, 217, 255, 0.3);
+  font-weight: 600;
+  color: #71e9ff;
   text-transform: uppercase;
-  opacity: 0.7;
 }
 
 .label-id {
-  font-family: "Space Mono", monospace;
-  font-size: 0.45rem;
-  letter-spacing: 3px;
-  color: rgba(0, 217, 255, 0.2);
-}
-
-/* Animations d'etats (Uniquement sur le label pour ne pas casser la netteté de l'Orb) */
-.jarvis-core--speaking .label-status {
-  color: #b06eff;
-  text-shadow: 0 0 15px rgba(176, 110, 255, 0.4);
-  animation: label-flicker 0.4s infinite alternate;
-}
-
-@keyframes label-flicker {
-  from {
-    opacity: 0.3;
-  }
-  to {
-    opacity: 0.8;
-  }
-}
-
-/* On s'assure qu'aucun mode ne rajoute de filtre au canvas */
-.jarvis-core--listening .jarvis-core__canvas,
-.jarvis-core--thinking .jarvis-core__canvas,
-.jarvis-core--speaking .jarvis-core__canvas {
-  filter: none !important;
+  font-size: 0.5rem;
+  color: rgba(113, 233, 255, 0.4);
 }

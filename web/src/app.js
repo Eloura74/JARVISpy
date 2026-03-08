@@ -56,11 +56,6 @@ class JarvisApp {
     let activeWidgetRequest = ""; // Stocke la requête qui a ouvert un widget
 
     store.subscribe((state) => {
-      // 0. Update de l'Orb
-      if (this.orb && this.orb.updateState) {
-        this.orb.updateState(state.orbStatus);
-      }
-
       const text = (state.lastUserMessage || "").toLowerCase();
       const isNewMessage =
         state.lastUserMessage && state.lastUserMessage !== lastUserRequest;

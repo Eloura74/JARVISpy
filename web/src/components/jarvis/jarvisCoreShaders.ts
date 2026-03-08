@@ -14,8 +14,8 @@ void main() {
 
   vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
   
-  // NETTETÉ PRO : Constante 15.0 pour des points micros et hyper classes
-  gl_PointSize = aSize * (15.0 / -mvPosition.z);
+  // Echelle augmentée pour la visibilité (5.5 -> 10.0)
+  gl_PointSize = aSize * (10.0 / -mvPosition.z);
   
   gl_Position = projectionMatrix * mvPosition;
 }
@@ -29,12 +29,16 @@ void main() {
   vec2 uv = gl_PointCoord - vec2(0.5);
   float dist = length(uv);
 
-  // Core tres net, halo minuscule
-  float core = 1.0 - smoothstep(0.1, 0.2, dist);
-  float soft = 1.0 - smoothstep(0.2, 0.5, dist);
+  // Smoothstep plus doux pour eviter la disparition (0.3 -> 0.45)
+  float dot = 1.0 - smoothstep(0.0, 0.45, dist);
+  
+  // Spark central un peu plus large
+  float spark = 1.0 - smoothstep(0.0, 0.12, dist);
 
-  vec3 color = vColor * (1.0 + core * 0.5);
-  float alpha = soft * vAlpha;
+  vec3 color = vColor * (0.8 + spark * 0.4);
+  float alpha = dot * vAlpha;
+
+  if (alpha < 0.005) discard;
 
   gl_FragColor = vec4(color, alpha);
 }

@@ -2,11 +2,7 @@ import React, { useEffect, useRef } from "react";
 import * as THREE from "three";
 import "./jarvis-core.css";
 import { store } from "../../services/state.js";
-import {
-  CORE_CONFIG,
-  JARVIS_COLORS,
-  type JarvisMode,
-} from "./jarvisCoreConfig";
+import { CORE_CONFIG, type JarvisMode } from "./jarvisCoreConfig";
 
 import { createPointField, updatePointField } from "./jarvisPointField";
 
@@ -16,11 +12,6 @@ interface JarvisCoreProps {
   size?: number;
 }
 
-/**
- * JARVIS-CORE V5.6 - PURE PARTICLES
- * On supprime Nucleus et Rings pour garder la finesse du mode "veille" partout.
- * Seuls la couleur et le grossissement varient.
- */
 export const JarvisCore: React.FC<JarvisCoreProps> = ({ mode, size = 540 }) => {
   const mountRef = useRef<HTMLDivElement>(null);
   const frameRef = useRef<number>(0);
@@ -30,7 +21,6 @@ export const JarvisCore: React.FC<JarvisCoreProps> = ({ mode, size = 540 }) => {
   const audioLevelRef = useRef(0);
   const smoothedAudioRef = useRef(0);
 
-  // Sync mode sans re-render 3D
   useEffect(() => {
     modeRef.current = mode;
   }, [mode]);
@@ -47,33 +37,38 @@ export const JarvisCore: React.FC<JarvisCoreProps> = ({ mode, size = 540 }) => {
   useEffect(() => {
     if (!mountRef.current) return;
 
+    mountRef.current.innerHTML = "";
+    console.log("[JarvisCore] V5.17-STABLE Initialisation");
+
     const scene = new THREE.Scene();
-    const camera = new THREE.PerspectiveCamera(45, size / size, 0.1, 100);
+    const camera = new THREE.PerspectiveCamera(45, 1, 0.1, 100);
     camera.position.z = CORE_CONFIG.cameraZ;
 
-    const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
+    const renderer = new THREE.WebGLRenderer({
+      alpha: true,
+      antialias: true,
+    });
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     renderer.setSize(size, size);
 
-    mountRef.current.innerHTML = "";
-    mountRef.current.appendChild(renderer.domElement);
+    const canvas = renderer.domElement;
+    mountRef.current.appendChild(canvas);
     rendererRef.current = renderer;
 
-    // 1. Point Fields (Uniquement les particules pour la finesse)
     const mainField = createPointField({
       count: CORE_CONFIG.mainCount,
       radius: CORE_CONFIG.radius,
       depth: CORE_CONFIG.depth,
       pointSize: CORE_CONFIG.basePointSize,
-      opacity: 0.45,
+      opacity: 0.5,
     });
 
     const haloField = createPointField({
       count: CORE_CONFIG.haloCount,
-      radius: CORE_CONFIG.radius * 1.3,
-      depth: CORE_CONFIG.depth * 1.5,
+      radius: CORE_CONFIG.radius * 1.35,
+      depth: CORE_CONFIG.depth * 1.35,
       pointSize: CORE_CONFIG.haloPointSize,
-      opacity: 0.15,
+      opacity: 0.2,
     });
 
     scene.add(haloField.points);
@@ -83,31 +78,26 @@ export const JarvisCore: React.FC<JarvisCoreProps> = ({ mode, size = 540 }) => {
       const time = t * 0.001;
       const currentMode = modeRef.current;
 
-      const smoothing = CORE_CONFIG.smoothing || 0.12;
+      const smoothing = CORE_CONFIG.smoothing || 0.15;
       smoothedAudioRef.current +=
         (audioLevelRef.current - smoothedAudioRef.current) * smoothing;
 
-      let effectiveAudio = smoothedAudioRef.current;
-      if (currentMode === "speaking") {
-        effectiveAudio = Math.max(
-          effectiveAudio,
-          0.1 + Math.sin(time * 8) * 0.05,
-        );
-      }
-
-      // Update Particles (Finesse absolue)
       updatePointField(
         haloField,
-        time * 0.6,
-        effectiveAudio * 0.5,
+        time * 0.5,
+        smoothedAudioRef.current * 0.4,
         currentMode,
-        1.1,
+        1.05,
       );
-      updatePointField(mainField, time, effectiveAudio, currentMode, 1);
+      updatePointField(
+        mainField,
+        time,
+        smoothedAudioRef.current,
+        currentMode,
+        1.0,
+      );
 
-      mainField.points.rotation.y = time * 0.1;
-      haloField.points.rotation.y = -time * 0.04;
-
+      mainField.points.rotation.y = time * 0.05;
       renderer.render(scene, camera);
       frameRef.current = requestAnimationFrame(animate);
     };
@@ -130,13 +120,13 @@ export const JarvisCore: React.FC<JarvisCoreProps> = ({ mode, size = 540 }) => {
       <div ref={mountRef} className="jarvis-core__canvas" />
       <div className="jarvis-core__label">
         <span className="label-status">
-          {mode === "idle" || mode === "listening"
+          {mode === "idle"
             ? "VEILLE"
             : mode === "thinking"
               ? "ANALYSE"
               : "RÉPONSE"}
         </span>
-        <span className="label-id">JARVIS-CORE // V5.6</span>
+        <span className="label-id">JARVIS-CORE // V5.17-FINAL</span>
       </div>
     </div>
   );

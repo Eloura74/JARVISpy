@@ -51,21 +51,28 @@ class AudioAnalyzer {
     }
     const rms = Math.sqrt(sum / this.dataArray.length);
 
-    // Mise à jour du niveau sonore
-    store.setState({ audioLevel: rms });
-
-    // --- LOGIQUE DE TRANSITION D'ÉTAT LOCALE ---
-    // Si on détecte un volume signifiant (> 0.05)
-    // On passe en "listening" si on n'est pas déjà en train de "penser" ou "parler"
     const currentStatus = store.state.orbStatus;
 
+    // --- SIMULATION DE PAROLE (V5.10) ---
+    // Si JARVIS parle, on ignore le micro (feedback) et on simule un pouls élégant
+    let finalRms = rms;
+    if (currentStatus === "speaking") {
+      this.simTime = (this.simTime || 0) + 0.15;
+      finalRms = 0.12 + Math.abs(Math.sin(this.simTime)) * 0.08;
+    } else {
+      this.simTime = 0;
+    }
+
+    // Mise à jour du niveau sonore (rms réel pour listening, simulé pour speaking)
+    store.setState({ audioLevel: finalRms });
+
+    // --- LOGIQUE DE TRANSITION D'ÉTAT LOCALE ---
     if (rms > 0.05) {
-      if (currentStatus === "idle" || currentStatus === "speaking") {
+      if (currentStatus === "idle") {
         store.setState({ orbStatus: "listening" });
       }
-      this.silenceCounter = 0; // Reset silence si bruit
+      this.silenceCounter = 0;
     } else {
-      // Si silence prolongé (~1s à 60fps = 60 ticks)
       if (currentStatus === "listening") {
         this.silenceCounter = (this.silenceCounter || 0) + 1;
         if (this.silenceCounter > 60) {

@@ -1,21 +1,19 @@
-import * as THREE from "three";
+export const CORE_CONFIG = {
+  mainCount: 1100,
+  haloCount: 400,
+  radius: 1.6,
+  depth: 0.8,
+  basePointSize: 5.0, // Compromis ideal (3.0 -> 5.0)
+  haloPointSize: 3.5,
+  smoothing: 0.15,
+  cameraZ: 6.2,
+};
+
+export const JARVIS_COLORS = {
+  idle: { r: 0.0, g: 0.7, b: 0.95 }, // Cyan pro equilibré
+  listening: { r: 0.0, g: 0.7, b: 0.95 },
+  thinking: { r: 0.0, g: 0.7, b: 0.95 },
+  speaking: { r: 0.6, g: 0.4, b: 1.0 },
+};
 
 export type JarvisMode = "idle" | "listening" | "thinking" | "speaking";
-
-export const JARVIS_COLORS: Record<JarvisMode, THREE.Color> = {
-  idle: new THREE.Color("#00d2ff"),
-  listening: new THREE.Color("#00d2ff"),
-  thinking: new THREE.Color("#69a8ff"),
-  speaking: new THREE.Color("#b06eff"), // Violet Jarvis V3
-};
-
-export const CORE_CONFIG = {
-  mainCount: 1400,
-  haloCount: 500,
-  radius: 1.6,
-  depth: 1.1,
-  basePointSize: 4.0, // Finesse Pro
-  haloPointSize: 3.0, // Finesse Pro
-  smoothing: 0.12,
-  cameraZ: 5.6,
-};
