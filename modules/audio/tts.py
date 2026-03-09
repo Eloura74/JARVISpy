@@ -83,20 +83,24 @@ class TextToSpeech:
                     
                 self.queue.task_done()
 
-    async def _handle_response(self, payload: Dict[str, Any]):
-        """Capture l'événement de texte généré et le place dans la file d'attente"""
+    async def _handle_stream_fragment(self, payload: Dict[str, Any]):
+        """Capture un fragment de phrase et le place dans la file d'attente pour lecture immédiate."""
         text = payload.get("text", "")
         if not text:
             return
             
-        logger.debug(f"TTS met en file d'attente : {text[:30]}...")
+        logger.debug(f"TTS (Stream) met en file d'attente : {text[:30]}...")
         self.queue.put(text)
 
     def start(self):
-        """Lance le worker et abonne le module aux événements"""
+        """Lance le worker et abonne le module aux événements de streaming"""
         self._worker_thread.start()
-        bus.subscribe("brain.response_generated", self._handle_response)
-        logger.info("Module TTS (Voix) actif.")
+        # On s'abonne au flux de fragments pour plus de réactivité
+        bus.subscribe("brain.stream_fragment", self._handle_stream_fragment)
+        # On garde l'ancien pour compatibilité avec d'autres modules si besoin, 
+        # mais on ne l'utilise plus pour le TTS principal pour éviter les doublons.
+        # bus.subscribe("brain.response_generated", self._handle_response)
+        logger.info("Module TTS (Voix) actif en mode Streaming.")
 
 # Instance globale
 tts_instance = TextToSpeech()

@@ -42,10 +42,29 @@ class SpeechToText:
             self._vad_enabled = False
             logger.warning("webrtcvad non installé — VAD désactivé. Lancez : pip install webrtcvad-wheels")
         
+        # Détection automatique du moteur de calcul (CUDA vs CPU)
+        self.device = "cpu"
+        self.compute_type = "int8"
+        
+        try:
+            # On vérifie si nvidia-smi est présent ou si on peut détecter CUDA autrement
+            # Note: faster-whisper utilise ctranslate2 qui gère bien l'auto-détection
+            # mais on préfère être explicite.
+            import torch
+            if torch.cuda.is_available():
+                self.device = "cuda"
+                self.compute_type = "float16" # Plus rapide sur GPU
+                logger.info("GPU NVIDIA détecté. Accélération CUDA activée pour STT.")
+            else:
+                logger.info("Pas de GPU compatible CUDA détecté (Torch). Utilisation du CPU.")
+        except ImportError:
+            logger.debug("Torch non installé, détection GPU via fallback...")
+            # Fallback simple ou laisser Whisper décider plus bas
+            pass
+
         # Initialisation de Faster-Whisper
-        # FIX: On force le CPU pour éviter l'erreur "cublas64_12.dll introuvable" si CUDA n'est pas installé
-        logger.info("Chargement du modèle Whisper (small) en mémoire sur CPU...")
-        self.model = WhisperModel("small", device="cpu", compute_type="int8")
+        logger.info(f"Chargement du modèle Whisper (small) sur {self.device.upper()} ({self.compute_type})...")
+        self.model = WhisperModel("small", device=self.device, compute_type=self.compute_type)
         logger.info("Modèle Whisper chargé et prêt.")
 
     def _setup_mic(self, recalibrate=True):

@@ -92,47 +92,61 @@ class Brain:
         if semantic_context:
             enriched_query = f"{text}\n\n[CONTEXTE MÉMOIRE]\n{semantic_context}"
 
-        def interaction_loop():
-            # Initialisation avec l'entrée utilisateur (éventuellement enrichie)
+        async def interaction_loop():
             current_input = enriched_query
             
             while True:
-                response = self.chat_session.send_message(current_input)
+                # 1. Lancement du stream
+                response_stream = self.chat_session.send_message_stream(current_input)
                 
-                # Vérification si un outil a renvoyé une image (Vision)
-                # Le SDK gère l'exécution des outils, mais si l'un d'eux renvoie 
-                # un JSON spécifique 'image_data', nous devons relancer un tour multi-modal.
-                
+                full_text = ""
+                current_sentence = ""
                 last_tool_output = None
-                try:
-                    # On fouille dans les parts de la réponse pour voir si un outil a parlé
-                    for part in response.candidates[0].content.parts:
-                        if hasattr(part, 'function_response') and part.function_response:
-                            res = part.function_response.response
-                            if isinstance(res, dict) and res.get("type") == "image_data":
-                                last_tool_output = res
-                except:
-                    pass
+                
+                for chunk in response_stream:
+                    # Gestion du texte pour le TTS
+                    if chunk.text:
+                        text_chunk = chunk.text
+                        full_text += text_chunk
+                        current_sentence += text_chunk
+                        
+                        # Découpage intelligent par phrase pour le streaming vocal
+                        if any(p in text_chunk for p in [". ", "! ", "? ", "\n"]):
+                            await bus.emit("brain.stream_fragment", {"text": current_sentence.strip()})
+                            current_sentence = ""
+                    
+                    # Détection d'appels d'outils potentiels (AFC)
+                    # Le SDK gère l'exécution, mais nous devons surveiller les retours (ex: Vision)
+                    try:
+                        for part in chunk.candidates[0].content.parts:
+                            if hasattr(part, 'function_response') and part.function_response:
+                                res = part.function_response.response
+                                if isinstance(res, dict) and res.get("type") == "image_data":
+                                    last_tool_output = res
+                    except:
+                        pass
+                
+                # Émission du reliquat de texte
+                if current_sentence.strip():
+                    await bus.emit("brain.stream_fragment", {"text": current_sentence.strip()})
 
+                # Si un outil a produit une image, on relance un tour multi-modal
                 if last_tool_output:
-                    # Tour multi-modal : on envoie l'image en tant que contenu
-                    logger.info("Traitement d'une donnée visuelle reçue par un outil...")
+                    logger.info("Traitement d'une donnée visuelle (stream tool output)...")
                     image_part = types.Part.from_bytes(
                         data=base64.b64decode(last_tool_output["data"]),
                         mime_type=last_tool_output["mime_type"]
                     )
                     current_input = [image_part, "Analyse cette image pour répondre à ma commande initiale."]
-                    continue # On boucle pour envoyer l'image
+                    continue 
                 
-                # Sinon, c'est une réponse textuelle finale
-                final_text = response.text
-                
-                # Archivage
-                memory.store_message(role="user", content=text)
-                memory.store_message(role="assistant", content=final_text)
-                return final_text
+                # Fin de la boucle : Archivage
+                if full_text:
+                    memory.store_message(role="user", content=text)
+                    memory.store_message(role="assistant", content=full_text)
+                return full_text
             
-        return await asyncio.to_thread(interaction_loop)
+        return await interaction_loop()
 
     def start(self):
         """Abonne le cerveau aux flux d'événements (Voix, UI, WebSocket)."""

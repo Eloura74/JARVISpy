@@ -66,10 +66,4 @@ def get_system_instruction() -> str:
         "- INTERACTION HUD : Les widgets (Trajet, Calendrier, Vision, Email) s'affichent automatiquement. Ne les décris pas, utilise-les pour appuyer tes réponses."
     )
     
-    # Ajout de l'historique récent (optionnel, déjà géré partiellement par le SDK GenAI en mode Chat)
-    history_rows = memory.get_recent_history(limit=5)
-    if history_rows:
-        history_text = "\n".join([f"{msg['role'].upper()}: {msg['content']}" for msg in history_rows])
-        instruction += f"\n\nHistorique récent pour contexte :\n{history_text}"
-        
     return instruction
