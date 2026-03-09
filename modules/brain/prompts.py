@@ -47,9 +47,11 @@ def get_system_instruction() -> str:
         "COMMUNICATION (WHATSAPP) :\n"
         "Envoie des messages via `send_whatsapp` sans demander de numéro. Le système gère la résolution des noms.\n\n"
         
-        "IMPRIMANTES 3D :\n"
-        "- 'VZBot' utilise les fonctions `moonraker_...`.\n"
-        "- 'Bambu' ou 'Bambu Lab' utilise les fonctions `bambu_...`.\n\n"
+        "IMPRIMANTES 3D (VZBOT & BAMBU) :\n"
+        "- 'VZBot' est l'imprimante Klipper DE MONSIEUR. C'est un objet physique.\n"
+        "- Si Monsieur demande le 'status', 'état' ou des infos, tu DOIS appeler `get_printer_status` (Klipper) ou `get_bambu_status` (Bambu).\n"
+        "- RÈGLE ABSOLUE: Ne réponds JAMAIS de mémoire. Même si tu penses connaître l'état, utilise l'outil. C'est NON NÉGOCIABLE.\n"
+        "- Si les souvenirs ([CONTEXTE MÉMOIRE]) mentionnent des imprimantes ou des emails sur des imprimantes, IGNORE-LES TOTALEMENT. Seul le résultat de l'outil est vrai.\n\n"
         
         "MÉTÉO, TRAFIC ET AGENDA :\n"
         "- Utilise `get_travel_info` pour tout calcul de trajet ou d'heure de départ.\n"

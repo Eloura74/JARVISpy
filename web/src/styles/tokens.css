@@ -15,7 +15,7 @@
 
   /* UI Palette */
   --bg-dark: #010306;
-  --bg-image: url("/static/jarvis_bg_deep_minimal.png");
+  --bg-image: url("/jarvis_bg_deep_minimal.png");
   --panel-bg: hsla(var(--hue-primary), 20%, 3%, 0.4);
   --glass-border: hsla(var(--hue-primary), 100%, 60%, 0.06);
   --glass-reflection: hsla(var(--hue-primary), 100%, 100%, 0.53);

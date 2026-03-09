@@ -605,8 +605,8 @@ async function pollPrintStatus() {
     if (anyData) {
       printWidget.style.display = "block";
       let html = "";
-      if (bambu) html += renderPrinterCard("🐼 Bambu Lab", bambu);
-      if (moonraker) html += renderPrinterCard("🖨️ Klipper", moonraker);
+      if (bambu) html += renderPrinterCard("Imprimante Bambu Lab", bambu);
+      if (moonraker) html += renderPrinterCard("Imprimante VZBot", moonraker);
       printWidgetContent.innerHTML =
         html || "<div style='opacity:.5;font-size:.8rem'>Aucune donnée</div>";
     } else {

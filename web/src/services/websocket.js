@@ -130,6 +130,14 @@ class WebSocketService {
       case "system.calendar":
         store.setState({ calendarInfo: data });
         break;
+      case "printer.status":
+        store.setState({
+          printData: {
+            ...store.state.printData,
+            [data.type]: data,
+          },
+        });
+        break;
       case "maps.travel_info":
         store.setState({ travelInfo: data, orbStatus: "idle" });
         break;

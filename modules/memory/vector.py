@@ -66,5 +66,18 @@ class VectorMemory:
             logger.error(f"Erreur de recherche vectorielle : {e}")
             return []
 
+    def clear_all(self):
+        """Supprime tous les souvenirs de la mémoire vectorielle."""
+        try:
+            self.client.delete_collection("jarvis_memory")
+            self.collection = self.client.create_collection(
+                name="jarvis_memory",
+                embedding_function=self.embedding_fn,
+                metadata={"hnsw:space": "cosine"}
+            )
+            logger.info("Mémoire vectorielle réinitialisée avec succès.")
+        except Exception as e:
+            logger.error(f"Erreur lors de la purge vectorielle : {e}")
+
 # Instance globale
 vector_memory = VectorMemory()

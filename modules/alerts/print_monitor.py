@@ -53,7 +53,7 @@ async def _check_moonraker():
 
     try:
         from modules.services.moonraker.client import moonraker_client
-        data = moonraker_client.get("/printer/objects/query?print_stats")
+        data = await moonraker_client.get("/printer/objects/query?print_stats")
         if "error" in data:
             return
 

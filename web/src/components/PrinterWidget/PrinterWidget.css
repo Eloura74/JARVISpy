@@ -1,0 +1,102 @@
+.printer-widget {
+  margin-top: 15px;
+  border-left: 3px solid var(--primary);
+  animation: pulse-border 4s infinite;
+}
+
+.print-info {
+  margin-bottom: 15px;
+}
+
+.print-file-name {
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  color: var(--primary);
+  margin-bottom: 8px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-transform: uppercase;
+}
+
+.print-progress-container {
+  height: 12px;
+  background: rgba(0, 255, 255, 0.1);
+  border: 1px solid rgba(0, 255, 255, 0.2);
+  position: relative;
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.print-progress-bar {
+  height: 100%;
+  background: linear-gradient(90deg, var(--primary-dim), var(--primary));
+  width: 0%;
+  transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 0 10px var(--primary);
+}
+
+.print-progress-text {
+  position: absolute;
+  right: 5px;
+  top: -1px;
+  font-size: 0.65rem;
+  font-weight: bold;
+  color: #fff;
+  text-shadow: 1px 1px 2px #000;
+}
+
+.print-metrics {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-bottom: 15px;
+}
+
+.p-metric {
+  display: flex;
+  flex-direction: column;
+}
+
+.p-metric .label {
+  font-size: 0.6rem;
+  color: rgba(255, 255, 255, 0.5);
+  margin-bottom: 2px;
+}
+
+.p-metric .val {
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+  color: #fff;
+}
+
+.print-status-label {
+  text-align: center;
+  padding: 4px;
+  background: rgba(255, 255, 255, 0.05);
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  letter-spacing: 2px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.print-status-label.state-printing {
+  color: var(--primary);
+  border-color: var(--primary-dim);
+  box-shadow: inset 0 0 10px rgba(0, 255, 255, 0.1);
+}
+
+.print-status-label.state-complete {
+  color: #00ff88;
+  border-color: #008844;
+}
+
+@keyframes pulse-border {
+  0%,
+  100% {
+    border-left-color: var(--primary);
+  }
+  50% {
+    border-left-color: var(--primary-dim);
+  }
+}

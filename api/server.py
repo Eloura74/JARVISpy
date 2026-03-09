@@ -207,7 +207,8 @@ def _setup_bus_to_ws_bridge():
         "ui.show_vision",
         "ui.show_emails",
         "maps.travel_info",
-        "system.calendar"
+        "system.calendar",
+        "printer.status"
     ]
     
     for event_name in events_to_forward:

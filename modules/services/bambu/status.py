@@ -1,7 +1,7 @@
 import json
 from modules.services.bambu.client import bambu_client
 
-def get_bambu_status() -> str:
+async def get_bambu_status() -> str:
     """
     Retourne l'état complet de l'imprimante Bambu Lab :
     températures, état du job, %, temps restant et numéro de couche.
@@ -18,8 +18,11 @@ def get_bambu_status() -> str:
         "PAUSE": "En pause",  "FINISH": "Terminée",
         "FAILED": "Erreur",   "SLICING": "Slicing en cours",
     }
+    from core.event_bus import bus
+    
     raw = state.get("gcode_state", "IDLE")
-    return json.dumps({
+    summary = {
+        "type": "bambu",
         "état": gcode_map.get(raw, raw),
         "fichier": state.get("subtask_name", "aucun"),
         "avancement_%": state.get("mc_percent", 0),
@@ -33,10 +36,14 @@ def get_bambu_status() -> str:
             "actuel": round(state.get("bed_temper", 0), 1),
             "cible": round(state.get("bed_target_temper", 0), 1),
         },
-    }, ensure_ascii=False)
+    }
+    
+    # Signal pour le HUD
+    await bus.emit("printer.status", summary)
+    return json.dumps(summary, ensure_ascii=False)
 
 
-def get_bambu_progress() -> str:
+async def get_bambu_progress() -> str:
     """
     Retourne uniquement l'avancement de l'impression Bambu Lab en cours.
     Version allégée (économise des tokens Gemini).

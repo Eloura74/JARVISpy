@@ -1,6 +1,7 @@
 import os
 import re
 import subprocess
+import asyncio
 from core.logger import get_logger
 
 logger = get_logger("system.windows")
@@ -32,7 +33,7 @@ def _get_all_start_menu_apps():
                         apps[name] = os.path.join(root, file)
     return apps
 
-def find_and_launch_app(app_name: str) -> str:
+async def find_and_launch_app(app_name: str) -> str:
     """
     Ouvre une application sur le système Windows de manière intelligente (sans chemin en dur).
     Cherche l'exécutable via le Menu Démarrer (Fuzzy Matching) ou via le Shell.
@@ -40,6 +41,9 @@ def find_and_launch_app(app_name: str) -> str:
     Args:
         app_name (str): Le nom de l'application à ouvrir (ex: "bambus studio", "google chrome").
     """
+    return await asyncio.to_thread(_sync_find_and_launch_app, app_name)
+
+def _sync_find_and_launch_app(app_name: str) -> str:
     logger.info(f"Recherche intelligente et ouverture de: {app_name}")
     try:
         app_name_lower = app_name.lower().strip()
@@ -136,13 +140,16 @@ def _find_window_by_title(title_chunk: str):
                 
     return None
 
-def close_application(app_name: str) -> str:
+async def close_application(app_name: str) -> str:
     """
     Recherche et ferme une application en cours d'exécution de manière tolérante (Fuzzy).
     
     Args:
         app_name (str): Nom de l'application (ex: "bambus studio", "chrome").
     """
+    return await asyncio.to_thread(_sync_close_application, app_name)
+
+def _sync_close_application(app_name: str) -> str:
     logger.info(f"Demande de fermeture (Smart): {app_name}")
     closed_count = 0
     app_name_lower = app_name.lower().replace(".exe", "")
@@ -194,7 +201,7 @@ def close_application(app_name: str) -> str:
     except Exception as e:
         return f"Erreur lors de la fermeture: {str(e)}"
 
-def manage_window_state(app_name: str, state: str) -> str:
+async def manage_window_state(app_name: str, state: str) -> str:
     """
     Réduit (minimise) ou Agrandit (maximise) une fenêtre en cours d'exécution.
     
@@ -202,6 +209,9 @@ def manage_window_state(app_name: str, state: str) -> str:
         app_name (str): Nom de l'application appartenant à la fenêtre.
         state (str): 'minimize' pour réduire, 'maximize' pour agrandir en plein écran, 'restore' pour vue normale.
     """
+    return await asyncio.to_thread(_sync_manage_window_state, app_name, state)
+
+def _sync_manage_window_state(app_name: str, state: str) -> str:
     logger.info(f"Demande état fenêtre: {app_name} -> {state}")
     hwnd = _find_window_by_title(app_name)
     
@@ -227,7 +237,7 @@ def manage_window_state(app_name: str, state: str) -> str:
     except Exception as e:
         return f"Erreur manipulation fenêtre: {str(e)}"
 
-def move_window_to_screen(app_name: str, screen_number: int) -> str:
+async def move_window_to_screen(app_name: str, screen_number: int) -> str:
     """
     Déplace la fenêtre d'une application sur un autre écran (1, 2, 3...) dans une configuration Multi-écrans.
     
@@ -235,6 +245,9 @@ def move_window_to_screen(app_name: str, screen_number: int) -> str:
         app_name (str): Nom de la fenêtre à déplacer.
         screen_number (int): Numéro de l'écran de destination (1 pour l'écran primaire, 2 pour le secondaire, etc).
     """
+    return await asyncio.to_thread(_sync_move_window_to_screen, app_name, screen_number)
+
+def _sync_move_window_to_screen(app_name: str, screen_number: int) -> str:
     logger.info(f"Demande de déplacement de {app_name} vers écran {screen_number}")
     
     try:
@@ -285,7 +298,7 @@ def move_window_to_screen(app_name: str, screen_number: int) -> str:
     except Exception as e:
         return f"Erreur lors du déplacement de l'écran: {str(e)}"
 
-def open_file_or_url(target: str) -> str:
+async def open_file_or_url(target: str) -> str:
     """
     Ouvre n'importe quel type de fichier (image, modèle 3D, texte) ou une URL de site web 
     avec le programme par défaut de Windows.
@@ -294,6 +307,9 @@ def open_file_or_url(target: str) -> str:
     Args:
         target (str): Le chemin absolu du fichier ou l'URL du site web (ex: "https://google.com").
     """
+    return await asyncio.to_thread(_sync_open_file_or_url, target)
+
+def _sync_open_file_or_url(target: str) -> str:
     logger.info(f"Demande d'ouverture universelle: {target}")
     try:
         if not target.startswith("http") and not os.path.exists(target):
@@ -307,21 +323,27 @@ def open_file_or_url(target: str) -> str:
 
 # On pourrait ajouter close_application, list_processes, etc.
 
-def get_system_time() -> str:
+async def get_system_time() -> str:
     """
     Retourne l'heure locale et la date actuelle du système Windows.
     Appelé par l'IA lorsqu'on lui demande l'heure ou la date.
     """
+    return await asyncio.to_thread(_sync_get_system_time)
+
+def _sync_get_system_time() -> str:
     from datetime import datetime
     now = datetime.now()
     logger.info("Demande de l'heure système.")
     return f"Date et heure actuelles: {now.strftime('%d/%m/%Y %H:%M:%S')}"
 
-def get_battery_status() -> str:
+async def get_battery_status() -> str:
     """
     Retourne le niveau de batterie du système Windows si applicable.
     Appelé par l'IA pour conseiller sur le branchement de l'ordinateur.
     """
+    return await asyncio.to_thread(_sync_get_battery_status)
+
+def _sync_get_battery_status() -> str:
     import psutil
     logger.info("Demande de l'état de la batterie.")
     try:
@@ -336,7 +358,7 @@ def get_battery_status() -> str:
 
 # --- GESTION DE FICHIERS ---
 
-def list_directory(path: str = ".") -> str:
+async def list_directory(path: str = ".") -> str:
     """
     Liste les fichiers et dossiers présents dans le répertoire indiqué.
     Appelé par l'IA pour explorer le système de fichiers.
@@ -344,6 +366,9 @@ def list_directory(path: str = ".") -> str:
     Args:
         path (str): Le chemin absolu ou relatif du dossier à lister. Défaut au répertoire courant.
     """
+    return await asyncio.to_thread(_sync_list_directory, path)
+
+def _sync_list_directory(path: str = ".") -> str:
     logger.info(f"Demande de listage du dossier: {path}")
     try:
         if not os.path.exists(path):
@@ -363,7 +388,7 @@ def list_directory(path: str = ".") -> str:
     except Exception as e:
         return f"Erreur lors du listage: {str(e)}"
 
-def read_file(filepath: str) -> str:
+async def read_file(filepath: str) -> str:
     """
     Lit le contenu d'un fichier texte.
     Appelé par l'IA lorsqu'on lui demande de lire un fichier.
@@ -371,6 +396,9 @@ def read_file(filepath: str) -> str:
     Args:
         filepath (str): Le chemin du fichier à lire.
     """
+    return await asyncio.to_thread(_sync_read_file, filepath)
+
+def _sync_read_file(filepath: str) -> str:
     logger.info(f"Demande de lecture du fichier: {filepath}")
     try:
         if not os.path.exists(filepath):
@@ -402,7 +430,7 @@ def _is_safe_path(filepath: str) -> bool:
             return False
     return True
 
-def write_to_file(filepath: str, content: str) -> str:
+async def write_to_file(filepath: str, content: str) -> str:
     """
     Écrit du contenu dans un fichier (écrase le contenu s'il existe).
     Appelé par l'IA lorsqu'elle doit sauvegarder une note ou créer un fichier texte.
@@ -411,6 +439,9 @@ def write_to_file(filepath: str, content: str) -> str:
         filepath (str): Le chemin du fichier.
         content (str): Le texte à écrire dans le fichier.
     """
+    return await asyncio.to_thread(_sync_write_to_file, filepath, content)
+
+def _sync_write_to_file(filepath: str, content: str) -> str:
     logger.info(f"Demande d'écriture dans le fichier: {filepath}")
     
     if not _is_safe_path(filepath):

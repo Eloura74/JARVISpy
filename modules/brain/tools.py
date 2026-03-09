@@ -32,7 +32,7 @@ from modules.services.bambu import (
 # Utils, Intelligence et Mémoire
 from modules.system.screenshot import analyze_screen
 from modules.memory.context import context_buffer
-from modules.memory.manager import remember_info, forget_info
+from modules.memory.manager import reset_all_memories, remember_info, forget_info
 from modules.notifications.whatsapp import send_whatsapp, get_whatsapp_status
 from modules.services.weather import get_current_weather, get_weather_forecast
 from modules.services.maps import maps_service
@@ -43,7 +43,7 @@ JARVIS_TOOLS = [
     get_system_time, get_battery_status,
     list_directory, read_file, write_to_file,
     open_file_or_url, interactive_web_search, close_web_results, direct_google_search,
-    remember_info, forget_info,
+    remember_info, forget_info, reset_all_memories,
     # get_system_health_report, get_heavy_processes, # Retirés pour le moment (si installés)
     calendar_service.get_upcoming_events, calendar_service.create_event,
     calendar_service.prepare_calendar_action,

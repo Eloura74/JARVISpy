@@ -50,16 +50,27 @@ def run_api_server():
         log_level="error" # On garde les logs custom de notre appli propre
     )
 
-def setup_modules():
-    """Charge et abonne tous les modules fonctionnels de Jarvis"""
-    # Import tardif pour éviter les erreurs si la config n'est pas encore prête
-    from modules.brain.gemini import brain_instance
-    from modules.audio.tts import tts_instance
-    from modules.audio.stt import stt_instance
+async def setup_modules():
+    """Charge et abonne tous les modules fonctionnels de Jarvis de manière concurrente"""
     
+    # 1. Brain est asynchrone (utilise create_task), on l'importe sur le main thread
+    from modules.brain.gemini import brain_instance
     brain_instance.start()
-    tts_instance.start()
-    stt_instance.start()
+    
+    # 2. TTS et STT ont des __init__ très lourds (chargement Whisper/Kokoro).
+    # On isole leurs imports et démarrages dans des threads pour paralléliser le boot.
+    def _load_and_start_tts():
+        from modules.audio.tts import tts_instance
+        tts_instance.start()
+        
+    def _load_and_start_stt():
+        from modules.audio.stt import stt_instance
+        stt_instance.start()
+        
+    await asyncio.gather(
+        asyncio.to_thread(_load_and_start_tts),
+        asyncio.to_thread(_load_and_start_stt)
+    )
     
     # ESP32-S3 sphère physique (optionnel — se désactive si non branché)
     try:
@@ -147,7 +158,7 @@ async def main():
     start_whatsapp_bridge()
     
     # Initialisation des différents modules de l'assistant
-    setup_modules()
+    await setup_modules()
     
     # Démarrage du système d'alertes proactives (asyncio, non-bloquant, 0 token Gemini)
     from modules.alerts import start_all_monitors

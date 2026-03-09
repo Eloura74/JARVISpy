@@ -15,12 +15,14 @@ import { TravelWidget } from "./components/TravelWidget/TravelWidget.js";
 import { CalendarWidget } from "./components/CalendarWidget/CalendarWidget.js";
 import { VisionWidget } from "./components/VisionWidget/VisionWidget.js";
 import { EmailWidget } from "./components/EmailWidget/EmailWidget.js";
+import { PrinterWidget } from "./components/PrinterWidget/PrinterWidget.js";
 
 // Styles
 import "./components/TravelWidget/TravelWidget.css";
 import "./components/CalendarWidget/CalendarWidget.css";
 import "./components/VisionWidget/VisionWidget.css";
 import "./components/EmailWidget/EmailWidget.css";
+import "./components/PrinterWidget/PrinterWidget.css";
 
 /**
  * JARVIS App - Orchestrateur Principal Frontend
@@ -50,6 +52,7 @@ class JarvisApp {
     this.calendarWidget = new CalendarWidget();
     this.visionWidget = new VisionWidget();
     this.emailWidget = new EmailWidget();
+    this.printerWidget = new PrinterWidget();
 
     // Lancement de la séquence visuelle
     this.injectDataStreams();
@@ -228,6 +231,7 @@ class JarvisApp {
         this.visionWidget.hide();
         this.emailWidget.hide();
         this.travelWidget.hide();
+        // Le PrinterWidget se gère tout seul via son abonnement au store
       }
 
       // 3. Synchronisation finale
