@@ -5,18 +5,21 @@ import { audioAnalyzer } from "./services/audioAnalyzer.js";
 import { decryptText } from "./utils/textEffect.js";
 
 // Injection des instances Vanilla temporaires
-import { Status } from "./components/Status/Status.js";
 import { JarvisCoreBridge } from "./components/jarvis/JarvisCoreBridge";
-import { Terminal } from "./components/Terminal/Terminal.js";
-import { Chat } from "./components/Chat/Chat.js";
-import { Settings } from "./components/Settings/Settings.js";
-import { WebSearch } from "./components/WebSearch/WebSearch.js";
-import { NeuralLog } from "./components/NeuralLog/NeuralLog.js";
-import { TravelWidget } from "./components/TravelWidget/TravelWidget.js";
-import { CalendarWidget } from "./components/CalendarWidget/CalendarWidget.js";
-import { VisionWidget } from "./components/VisionWidget/VisionWidget.js";
-import { EmailWidget } from "./components/EmailWidget/EmailWidget.js";
-import { PrinterWidget } from "./components/PrinterWidget/PrinterWidget.js";
+
+// Composants natifs React
+import { Status } from "./components/Status/Status.jsx";
+import { NeuralLog } from "./components/NeuralLog/NeuralLog.jsx";
+import { PrinterWidget } from "./components/PrinterWidget/PrinterWidget.jsx";
+import { TravelWidget } from "./components/TravelWidget/TravelWidget.jsx";
+import { CalendarWidget } from "./components/CalendarWidget/CalendarWidget.jsx";
+import { VisionWidget } from "./components/VisionWidget/VisionWidget.jsx";
+import { EmailWidget } from "./components/EmailWidget/EmailWidget.jsx";
+import { WebSearch } from "./components/WebSearch/WebSearch.jsx";
+import { Chat } from "./components/Chat/Chat.jsx";
+import { Terminal } from "./components/Terminal/Terminal.jsx";
+import { Settings } from "./components/Settings/Settings.jsx";
+import { JarvisOrbWrapper } from "./components/jarvis/JarvisOrbWrapper.tsx";
 
 // Styles (les anciens imports)
 import "./components/TravelWidget/TravelWidget.css";
@@ -29,21 +32,7 @@ function App() {
   const [isBooting, setIsBooting] = useState(true);
   const [sttEnabled, setSttEnabled] = useState(false);
 
-  // References pour les conteneurs Vanilla
-  const statusRef = useRef(null);
-  const orbRef = useRef(null);
-  const terminalRef = useRef(null);
-  const chatRef = useRef(null);
-  const settingsRef = useRef(null);
-  const websearchRef = useRef(null);
-  const neurallogRef = useRef(null);
-  const travelRef = useRef(null);
-  const calendarRef = useRef(null);
-  const visionRef = useRef(null);
-  const emailRef = useRef(null);
-  const printerRef = useRef(null);
-
-  // Références d'instances JS
+  // Références d'instances JS (uniquement pour animations historiques si besoin, mais vide désormais)
   const instances = useRef({});
 
   useEffect(() => {
@@ -52,63 +41,39 @@ function App() {
     document.documentElement.setAttribute("data-theme", theme);
     document.body.classList.add("booting");
 
-    // Instanciation des vieux composants dans les ref (avec un délai pour garantir le DOM prêt)
-    const mountTimeout = setTimeout(() => {
-      if (!instances.current.status && statusRef.current?.id)
-        instances.current.status = new Status(statusRef.current.id);
-
-      if (!instances.current.orb && orbRef.current?.id)
-        instances.current.orb = new JarvisCoreBridge(orbRef.current.id);
-
-      if (!instances.current.terminal && terminalRef.current?.id)
-        instances.current.terminal = new Terminal(terminalRef.current.id);
-
-      if (!instances.current.chat && chatRef.current?.id)
-        instances.current.chat = new Chat(chatRef.current.id);
-
-      if (!instances.current.settings && settingsRef.current?.id)
-        instances.current.settings = new Settings(settingsRef.current.id);
-
-      if (!instances.current.websearch && websearchRef.current?.id)
-        instances.current.websearch = new WebSearch(websearchRef.current.id);
-
-      if (!instances.current.neurallog && neurallogRef.current?.id)
-        instances.current.neurallog = new NeuralLog(neurallogRef.current.id);
-
-      if (!instances.current.travel && travelRef.current?.id)
-        instances.current.travelWidget = new TravelWidget(travelRef.current.id);
-
-      if (!instances.current.calendar)
-        instances.current.calendarWidget = new CalendarWidget();
-      if (!instances.current.vision)
-        instances.current.visionWidget = new VisionWidget();
-      if (!instances.current.email)
-        instances.current.emailWidget = new EmailWidget();
-      if (!instances.current.printer)
-        instances.current.printerWidget = new PrinterWidget();
-    }, 150);
-
-    // Séquence d'anim
+    // Plus besoin d'instancier de classes Vanilla ici
     setTimeout(() => {
       setIsBooting(false);
       document.body.classList.remove("booting");
-      instances.current.terminal.addLog(
-        "SYSTÈME: INITIALISATION DES NOYAUX NEURAUX...",
-        "info",
+      window.dispatchEvent(
+        new CustomEvent("terminal-log", {
+          detail: {
+            text: "SYSTÈME: INITIALISATION DES NOYAUX NEURAUX...",
+            type: "info",
+          },
+        }),
       );
       setTimeout(
         () =>
-          instances.current.terminal.addLog(
-            "SYSTÈME: CHARGEMENT DES PROTOCOLES DE VISION...",
-            "info",
+          window.dispatchEvent(
+            new CustomEvent("terminal-log", {
+              detail: {
+                text: "SYSTÈME: CHARGEMENT DES PROTOCOLES DE VISION...",
+                type: "info",
+              },
+            }),
           ),
         400,
       );
       setTimeout(
         () =>
-          instances.current.terminal.addLog(
-            "SYSTÈME: CONNEXION AU BUS DE DONNÉES ÉTABLIE.",
-            "success",
+          window.dispatchEvent(
+            new CustomEvent("terminal-log", {
+              detail: {
+                text: "SYSTÈME: CONNEXION AU BUS DE DONNÉES ÉTABLIE.",
+                type: "success",
+              },
+            }),
           ),
         800,
       );
@@ -133,37 +98,27 @@ function App() {
         state.lastUserMessage && state.lastUserMessage !== lastUserRequest;
 
       if (state.travelInfo && state.travelInfo !== lastProcessedTravel) {
-        instances.current.travelWidget.show(state.travelInfo);
         lastProcessedTravel = state.travelInfo;
         activeWidgetRequest = state.lastUserMessage;
       }
 
       if (state.visionData) {
-        if (!instances.current.visionWidget.isVisible)
+        if (!store.getState().visionData)
           activeWidgetRequest = state.lastUserMessage;
-        instances.current.visionWidget.show(state.visionData);
-      } else {
-        instances.current.visionWidget.hide();
       }
 
       if (state.emailData) {
-        if (!instances.current.emailWidget.isVisible)
+        if (!store.getState().emailData)
           activeWidgetRequest = state.lastUserMessage;
-        instances.current.emailWidget.show(state.emailData);
-      } else {
-        instances.current.emailWidget.hide();
       }
 
       if (state.calendarInfo) {
-        instances.current.calendarWidget.show(state.calendarInfo);
         if (
           state.calendarInfo.status === "success" &&
           !state.calendarInfo.confirmRequired
         ) {
           setTimeout(() => store.setState({ calendarInfo: null }), 10000);
         }
-      } else {
-        instances.current.calendarWidget.hide();
       }
 
       // Cleanup automatique Vocale
@@ -195,19 +150,19 @@ function App() {
           text.includes("ça suffit"));
 
       if (shouldCloseExplicit) {
-        instances.current.visionWidget.hide();
-        instances.current.emailWidget.hide();
-        instances.current.travelWidget.hide();
-        instances.current.printerWidget.hide();
+        store.setState({ visionData: null });
+        store.setState({ emailData: null });
+        store.setState({ travelInfo: null });
+        store.setState({ printData: { moonraker: null, bambu: null } });
         lastUserRequest = state.lastUserMessage;
       } else if (
         isNewMessage &&
         state.lastUserMessage !== activeWidgetRequest
       ) {
-        instances.current.visionWidget.hide();
-        instances.current.emailWidget.hide();
-        instances.current.travelWidget.hide();
-        instances.current.printerWidget.hide();
+        store.setState({ visionData: null });
+        store.setState({ emailData: null });
+        store.setState({ travelInfo: null });
+        store.setState({ printData: { moonraker: null, bambu: null } });
       }
 
       if (state.lastUserMessage) lastUserRequest = state.lastUserMessage;
@@ -236,12 +191,14 @@ function App() {
   const toggleMic = () => {
     const nextState = !sttEnabled;
     store.setState({ sttEnabled: nextState });
-    if (instances.current.terminal) {
-      instances.current.terminal.addLog(
-        `SYSTÈME: ${nextState ? "ACTIVATION" : "DÉSACTIVATION"} DE L'ÉCOUTE...`,
-        nextState ? "success" : "error",
-      );
-    }
+    window.dispatchEvent(
+      new CustomEvent("terminal-log", {
+        detail: {
+          text: `SYSTÈME: ${nextState ? "ACTIVATION" : "DÉSACTIVATION"} DE L'ÉCOUTE...`,
+          type: nextState ? "success" : "error",
+        },
+      }),
+    );
     if (nextState) wsService.send("audio.start_stt");
     else {
       wsService.send("audio.stop_stt");
@@ -250,11 +207,14 @@ function App() {
   };
 
   const killApp = () => {
-    if (instances.current.terminal)
-      instances.current.terminal.addLog(
-        "SYSTÈME: PROCÉDURE DE FERMETURE ÉTABLIE.",
-        "error",
-      );
+    window.dispatchEvent(
+      new CustomEvent("terminal-log", {
+        detail: {
+          text: "SYSTÈME: PROCÉDURE DE FERMETURE ÉTABLIE.",
+          type: "error",
+        },
+      }),
+    );
     wsService.send("system.shutdown");
     document.body.style.pointerEvents = "none";
 
@@ -267,13 +227,13 @@ function App() {
   };
 
   const openSettings = () => {
-    if (instances.current.settings) instances.current.settings.open();
+    window.dispatchEvent(new CustomEvent("open-settings"));
   };
 
   return (
     <>
       <div id="app" className="app-layout">
-        <div id="status-mount" ref={statusRef}></div>
+        <Status />
 
         <aside className="stage-left">
           <div id="analytics-mount" className="glass">
@@ -298,20 +258,28 @@ function App() {
               <span className="btn-text">SYSTÈME PROFIL</span>
             </button>
           </div>
-          <div id="neural-log-container" ref={neurallogRef}></div>
-          <div id="travel-widget-container" ref={travelRef}></div>
-          <div id="printer-widget-container" ref={printerRef}></div>
+          <NeuralLog />
+          <TravelWidget />
+          <PrinterWidget />
         </aside>
 
-        <main id="orb-mount" className="orb-mount" ref={orbRef}></main>
+        <main id="orb-mount" className="orb-mount">
+          <JarvisOrbWrapper />
+        </main>
 
         <aside className="stage-right">
-          <div id="terminal-mount" ref={terminalRef}></div>
-          <div id="chat-mount" className="glass" ref={chatRef}></div>
+          <Terminal />
+          <Chat />
         </aside>
 
-        <div id="settings-mount" ref={settingsRef}></div>
-        <div id="websearch-mount" ref={websearchRef}></div>
+        <Settings />
+        <WebSearch />
+
+        <div className="center-widgets-container">
+          <VisionWidget />
+          <EmailWidget />
+          <CalendarWidget />
+        </div>
 
         <div className="system-controls">
           <button
