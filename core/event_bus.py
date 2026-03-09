@@ -43,7 +43,10 @@ class EventBus:
                     logger.error(f"Callback synchrone '{callback.__name__}' ignoré pour l'événement asynchrone '{event_name}'.")
             
             if tasks:
-                await asyncio.gather(*tasks, return_exceptions=True)
+                results = await asyncio.gather(*tasks, return_exceptions=True)
+                for res in results:
+                    if isinstance(res, Exception):
+                        logger.error(f"Erreur dans un callback de l'événement '{event_name}': {res}", exc_info=res)
 
 # Instance globale (Singleton) de l'EventBus
 bus = EventBus()

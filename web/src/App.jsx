@@ -198,6 +198,7 @@ function App() {
         instances.current.visionWidget.hide();
         instances.current.emailWidget.hide();
         instances.current.travelWidget.hide();
+        instances.current.printerWidget.hide();
         lastUserRequest = state.lastUserMessage;
       } else if (
         isNewMessage &&
@@ -206,6 +207,7 @@ function App() {
         instances.current.visionWidget.hide();
         instances.current.emailWidget.hide();
         instances.current.travelWidget.hide();
+        instances.current.printerWidget.hide();
       }
 
       if (state.lastUserMessage) lastUserRequest = state.lastUserMessage;

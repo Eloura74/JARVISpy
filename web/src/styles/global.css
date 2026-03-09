@@ -408,10 +408,10 @@ body.booting .settings-trigger {
 }
 
 .btn-ctrl.muted {
-  color: #fff;
+  color: var(--bg-dark);
   background: var(--accent); /* Orange */
-  border-color: #fff;
-  box-shadow: 0 0 25px rgba(255, 165, 0, 0.5);
+  border-color: var(--accent);
+  box-shadow: 0 0 25px hsla(var(--hue-accent), 100%, 50%, 0.4);
   animation: none;
 }
 

@@ -53,7 +53,7 @@ class TextToSpeech:
                     )
                     
                 if self.kokoro:
-                    logger.debug("Génération audio Kokoro en cours...")
+                    logger.info(f"🎤 Génération & Lecture audio Kokoro en cours pour : '{text[:30]}...'")
                     
                     # Kokoro supporte la génération directe de l'audio en mémoire (array Numpy)
                     # "fr-fr" pour le français.
@@ -89,7 +89,7 @@ class TextToSpeech:
         if not text:
             return
             
-        logger.debug(f"TTS (Stream) met en file d'attente : {text[:30]}...")
+        logger.info(f"TTS (Stream) met en file d'attente : '{text[:30]}...'")
         self.queue.put(text)
 
     def start(self):

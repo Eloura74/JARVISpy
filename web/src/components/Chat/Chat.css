@@ -29,8 +29,8 @@
   align-self: flex-end;
   background: hsla(var(--hue-primary), 100%, 50%, 0.1);
   border: 1px solid var(--glass-border);
-  color: white;
-  border-bottom-right-radius: 2px;
+  color: var(--text-main);
+  border-bottom-right-radius: 4px;
 }
 
 .msg.jarvis {
@@ -38,8 +38,8 @@
   background: var(--panel-bg);
   border: 1px solid var(--glass-border);
   border-left: 3px solid var(--primary);
-  color: #fff;
-  border-bottom-left-radius: 2px;
+  color: var(--text-main);
+  border-bottom-left-radius: 4px;
 }
 
 .chat-footer {
@@ -56,7 +56,7 @@
   flex: 1;
   background: transparent;
   border: none;
-  color: white;
+  color: var(--text-main);
   padding: 10px;
   font-family: var(--font-tech);
   font-size: 0.85rem;

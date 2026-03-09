@@ -104,13 +104,22 @@ class MapsService:
                 result["suggested_departure"] = departure_dt.strftime("%H:%M")
                 result["arrival_target"] = target_dt.strftime("%H:%M")
 
-            # Émission pour le widget
+            # Émission pour le widget (qui a besoin du polyline)
             if hasattr(bus, 'main_loop') and bus.main_loop:
                 bus.main_loop.create_task(bus.emit("maps.travel_info", result))
             else:
                 asyncio.create_task(bus.emit("maps.travel_info", result))
 
-            return result
+            # Résultat épuré pour le LLM (sans le polyline énorme et sans la clé API)
+            llm_result = {
+                "destination": result["destination"],
+                "distance": result["distance"],
+                "duration": result["duration"],
+            }
+            if target_dt:
+                llm_result["suggested_departure"] = result["suggested_departure"]
+
+            return llm_result
 
         except Exception as e:
             logger.error(f"Erreur service Maps: {e}")

@@ -11,7 +11,7 @@ from modules.memory.manager import memory
 from modules.memory.context import context_buffer
 
 # Import des nouveaux modules de JARVIS
-from modules.brain.tools import JARVIS_TOOLS
+from modules.brain.tools import JARVIS_TOOLS, TOOLS_MAPPING
 from modules.brain.prompts import get_system_instruction
 
 logger = get_logger("brain.gemini")
@@ -46,7 +46,8 @@ class Brain:
                 config=types.GenerateContentConfig(
                     system_instruction=get_system_instruction(),
                     temperature=0.7,
-                    tools=JARVIS_TOOLS
+                    tools=JARVIS_TOOLS,
+                    automatic_function_calling=types.AutomaticFunctionCallingConfig(disable=True)
                 )
             )
             self._is_ready.set()
@@ -100,6 +101,9 @@ class Brain:
             current_sentence = ""
             last_tool_output = None
             
+            # Liste des appels d'outils demandés par Gemini dans cette passe
+            pending_tool_calls = []
+
             # Tentatives de reconnexion en cas de 503/429 (Saturation API)
             max_retries = 5
             for attempt in range(max_retries):
@@ -112,8 +116,7 @@ class Brain:
                         timeout=15.0
                     )
                     async for chunk in stream:
-                        if chunk.text:
-                            # ... (reste du traitement texte identique)
+                        if getattr(chunk, 'text', None):
                             txt = chunk.text
                             full_text += txt
                             current_sentence += txt
@@ -124,17 +127,10 @@ class Brain:
                                     await bus.emit("brain.stream_fragment", {"text": frag})
                                 current_sentence = ""
                         
-                        # Traitement des outils (AFC)
-                        if chunk.candidates:
-                            for part in chunk.candidates[0].content.parts:
-                                if hasattr(part, 'function_call') and part.function_call:
-                                    logger.info(f"[BRAIN] 🔧 Outil sollicité : {part.function_call.name}")
-                                
-                                if hasattr(part, 'function_response') and part.function_response:
-                                    logger.info(f"[BRAIN] ✅ Résultat de {part.function_response.name}")
-                                    res = part.function_response.response
-                                    if isinstance(res, dict) and res.get("type") == "image_data":
-                                        last_tool_output = res
+                        # Récupération MANUELLE des appels d'outils demandés par le LLM
+                        if getattr(chunk, 'function_calls', None):
+                            for fc in chunk.function_calls:
+                                pending_tool_calls.append(fc)
                     
                     # Si on arrive ici, le flux s'est terminé avec succès
                     break
@@ -165,18 +161,56 @@ class Brain:
                     logger.error(f"[BRAIN] Erreur critique durant le streaming : {e}")
                     return "Désolé Monsieur, les serveurs de pensée sont actuellement saturés. Veuillez retenter votre commande dans quelques secondes."
 
-            # --- TRAITEMENT POST-STREAMING ---
+            # --- TRAITEMENT POST-STREAMING ET OUTILS MANUELS ---
+            if pending_tool_calls:
+                tool_responses = []
+                for fc in pending_tool_calls:
+                    func_name = fc.name
+                    args = dict(fc.args) if fc.args else {}
+                    logger.info(f"[BRAIN] 🔧 Exécution manuelle de l'outil : {func_name}")
+                    
+                    try:
+                        func = TOOLS_MAPPING.get(func_name)
+                        if not func:
+                            logger.error(f"[BRAIN] Outil inconnu : {func_name}")
+                            res = f"Erreur: Outil {func_name} non trouvé dans J.A.R.V.I.S."
+                        else:
+                            if asyncio.iscoroutinefunction(func):
+                                res = await func(**args)
+                            else:
+                                res = await asyncio.to_thread(func, **args)
+                            logger.info(f"[BRAIN] ✅ Résultat de {func_name} obtenu.")
+                            
+                        # Interception spéciale pour la Vision (qui renvoie un dict d'image bypassant le LLM texte standard)
+                        if isinstance(res, dict) and res.get("type") == "image_data":
+                            last_tool_output = res
+                            tool_responses.append(types.Part.from_function_response(name=func_name, response={"status": "Image capturée, analyse en cours"}))
+                        else:
+                            # Conversion sécurisée en dictionnaire pour eviter les erreurs de sérialisation API
+                            safe_res = {"result": res} if not isinstance(res, dict) else res
+                            tool_responses.append(types.Part.from_function_response(name=func_name, response=safe_res))
+                    except Exception as e:
+                        logger.error(f"[BRAIN] Erreur exécution outil {func_name}: {e}")
+                        tool_responses.append(types.Part.from_function_response(name=func_name, response={"error": str(e)}))
+                
+                # S'il y a une capture visuelle, on redirige l'input, sinon on pousse les retours de fonctions
+                if last_tool_output:
+                    logger.info("[BRAIN] Passage en mode analyse visuelle...")
+                    image_part = types.Part.from_bytes(
+                        data=base64.b64decode(last_tool_output["data"]),
+                        mime_type=last_tool_output["mime_type"]
+                    )
+                    current_input = [image_part, "Analyse cette image pour répondre à ma commande initiale."]
+                else:
+                    # On injecte les retours de fonctions comme prochain message
+                    current_input = tool_responses
+                
+                # On boucle pour que le LLM lise ces retours et finalise sa phrase
+                continue
+
+            # --- SI AUCUN OUTIL N'A ÉTÉ APPELÉ, LA PHRASE EST TERMINEE ---
             if current_sentence.strip():
                 await bus.emit("brain.stream_fragment", {"text": current_sentence.strip()})
-
-            if last_tool_output:
-                logger.info("[BRAIN] Passage en mode analyse visuelle...")
-                image_part = types.Part.from_bytes(
-                    data=base64.b64decode(last_tool_output["data"]),
-                    mime_type=last_tool_output["mime_type"]
-                )
-                current_input = [image_part, "Analyse cette image pour répondre à ma commande initiale."]
-                continue 
             
             if full_text:
                 memory.store_message(role="user", content=text)
