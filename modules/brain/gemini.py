@@ -22,7 +22,8 @@ class Brain:
     """
     
     def __init__(self):
-        self.model_name = "gemini-2.5-flash"
+        # self.model_name = "gemini-2.5-flash"
+        self.model_name = "gemini-3.1-flash-lite-preview"
         self.client = None
         self.chat_session = None
         self._setup()
