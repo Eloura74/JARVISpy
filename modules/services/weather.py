@@ -26,6 +26,17 @@ def _get_city(city: str) -> str:
     # On retire les nombres de 4 ou 5 chiffres en fin de chaîne
     if city:
         city = re.sub(r'\s*\d{4,5}$', '', city).strip()
+        
+        # Corrections phonétiques fréquentes liées au speech-to-text Whisper
+        phonetic_fixes = {
+            "l'histoire": "Istres",
+            "histoire": "Istres",
+            "histre": "Istres",
+            "stre": "Istres",
+            "aiste": "Istres"
+        }
+        city = phonetic_fixes.get(city.lower(), city)
+        
     return city
 
 def get_current_weather(city: str = "") -> str:
