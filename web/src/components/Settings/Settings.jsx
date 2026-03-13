@@ -145,24 +145,28 @@ export const Settings = () => {
     const { name, value, type, checked } = e.target;
     setFormData((prev) => ({
       ...prev,
-      [name]: type === "checkbox" ? checked : value,
+      [name]: type === "checkbox" ? checked : (type === "number" ? Number(value) : value),
     }));
   };
 
   const handleSave = async () => {
     setIsSaving(true);
-    // Préparer le payload avec les types corrects pour l'API
+    // Préparer le payload avec les types corrects pour l'API (Pydantic 422 Fix)
     const payload = { 
       ...formData,
-      camera_index: parseInt(formData.camera_index),
-      presence_check_interval: parseInt(formData.presence_check_interval),
-      absence_threshold: parseInt(formData.absence_threshold),
-      system_monitor_interval: parseInt(formData.system_monitor_interval)
+      vision_enabled: Boolean(formData.vision_enabled),
+      gmail_enabled: Boolean(formData.gmail_enabled),
+      wa_notify_on_alerts: Boolean(formData.wa_notify_on_alerts),
+      toast_enabled: Boolean(formData.toast_enabled),
+      proactive_enabled: Boolean(formData.proactive_enabled),
+      camera_index: parseInt(formData.camera_index || 0),
+      presence_check_interval: parseInt(formData.presence_check_interval || 5),
+      absence_threshold: parseInt(formData.absence_threshold || 600),
+      system_monitor_interval: parseInt(formData.system_monitor_interval || 60)
     };
 
-    // Remap location data so backend can process it separately if needed
-    // or we save location separately
-    const locPayload = { home: payload.loc_home, work: payload.loc_work };
+    // Remap location data so backend can process it separately
+    const locPayload = { home: formData.loc_home, work: formData.loc_work };
     delete payload.loc_home;
     delete payload.loc_work;
 

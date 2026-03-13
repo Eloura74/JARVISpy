@@ -94,22 +94,25 @@ function App() {
     const unsub = store.subscribe((state) => {
       setSttEnabled(state.sttEnabled);
       const text = (state.lastUserMessage || "").toLowerCase();
-      const isNewMessage =
-        state.lastUserMessage && state.lastUserMessage !== lastUserRequest;
+      const currentMessage = state.lastUserMessage;
+      
+      const isNewMessage = currentMessage && currentMessage !== lastUserRequest;
+
+      if (isNewMessage) {
+        lastUserRequest = currentMessage; // Update BEFORE potential recursion
+      }
 
       if (state.travelInfo && state.travelInfo !== lastProcessedTravel) {
         lastProcessedTravel = state.travelInfo;
-        activeWidgetRequest = state.lastUserMessage;
+        activeWidgetRequest = currentMessage;
       }
 
-      if (state.visionData) {
-        if (!store.getState().visionData)
-          activeWidgetRequest = state.lastUserMessage;
+      if (state.visionData && !activeWidgetRequest) {
+          activeWidgetRequest = currentMessage;
       }
 
-      if (state.emailData) {
-        if (!store.getState().emailData)
-          activeWidgetRequest = state.lastUserMessage;
+      if (state.emailData && !activeWidgetRequest) {
+          activeWidgetRequest = currentMessage;
       }
 
       if (state.calendarInfo) {
@@ -117,55 +120,37 @@ function App() {
           state.calendarInfo.status === "success" &&
           !state.calendarInfo.confirmRequired
         ) {
-          setTimeout(() => store.setState({ calendarInfo: null }), 10000);
+          setTimeout(() => {
+              if (store.getState().calendarInfo) {
+                  store.setState({ calendarInfo: null });
+              }
+          }, 10000);
         }
       }
 
       // Cleanup automatique Vocale
-      const closeKeywords = [
-        "ferme",
-        "fermez",
-        "fermer",
-        "c'est bon",
-        "annule",
-        "quitter",
-        "merci jarvis",
-      ];
-      const targetKeywords = [
-        "vision",
-        "image",
-        "photo",
-        "mail",
-        "courrier",
-        "message",
-        "fenêtre",
-        "celui-là",
-      ];
+      const closeKeywords = ["ferme", "fermez", "fermer", "c'est bon", "annule", "quitter", "merci jarvis"];
+      const targetKeywords = ["vision", "image", "photo", "mail", "courrier", "message", "fenêtre", "celui-là"];
       const hasCloseAction = closeKeywords.some((k) => text.includes(k));
       const hasTarget = targetKeywords.some((k) => text.includes(k));
-      const shouldCloseExplicit =
-        isNewMessage &&
-        ((hasCloseAction && hasTarget) ||
-          text.includes("c'est bon") ||
-          text.includes("ça suffit"));
+      const shouldCloseExplicit = isNewMessage && ((hasCloseAction && hasTarget) || text.includes("c'est bon") || text.includes("ça suffit"));
+
+      const resetWidgets = () => {
+          const updates = {};
+          if (store.getState().visionData) updates.visionData = null;
+          if (store.getState().emailData) updates.emailData = null;
+          if (store.getState().travelInfo) updates.travelInfo = null;
+          if (store.getState().printData?.moonraker || store.getState().printData?.bambu) {
+              updates.printData = { moonraker: null, bambu: null };
+          }
+          if (Object.keys(updates).length > 0) store.setState(updates);
+      };
 
       if (shouldCloseExplicit) {
-        store.setState({ visionData: null });
-        store.setState({ emailData: null });
-        store.setState({ travelInfo: null });
-        store.setState({ printData: { moonraker: null, bambu: null } });
-        lastUserRequest = state.lastUserMessage;
-      } else if (
-        isNewMessage &&
-        state.lastUserMessage !== activeWidgetRequest
-      ) {
-        store.setState({ visionData: null });
-        store.setState({ emailData: null });
-        store.setState({ travelInfo: null });
-        store.setState({ printData: { moonraker: null, bambu: null } });
+        resetWidgets();
+      } else if (isNewMessage && currentMessage !== activeWidgetRequest) {
+        resetWidgets();
       }
-
-      if (state.lastUserMessage) lastUserRequest = state.lastUserMessage;
     });
 
     wsService.connect();
