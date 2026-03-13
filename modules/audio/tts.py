@@ -60,8 +60,9 @@ class TextToSpeech:
                     
                     # Kokoro supporte la génération directe de l'audio en mémoire (array Numpy)
                     # "fr-fr" pour le français.
+                    # Speed réduite à 0.95 pour voix plus naturelle et moins robotique
                     samples, sample_rate = self.kokoro.create(
-                        text, voice=self.voice, speed=1.0, lang="fr-fr"
+                        text, voice=self.voice, speed=0.95, lang="fr-fr"
                     )
                     
                     logger.debug("Début lecture TTS (Sounddevice)")
@@ -88,39 +89,16 @@ class TextToSpeech:
 
     async def _handle_stream_fragment(self, payload: Dict[str, Any]):
         """
-        Capture un fragment de phrase avec buffer intelligent.
-        Regroupe les fragments courts pour éviter les pauses étranges.
+        Capture la phrase complète et l'envoie directement au TTS.
+        Plus de buffer, plus de découpage - fluidité maximale.
         """
         text = payload.get("text", "")
-        if not text:
+        if not text or not text.strip():
             return
         
-        import time
-        current_time = time.time()
-        
-        with self._buffer_lock:
-            self._fragment_buffer.append(text)
-            
-            # Conditions d'envoi au TTS :
-            # 1. Fragment long (> 50 caractères) = envoi immédiat
-            # 2. Ponctuation forte finale (. ! ?) = phrase complète
-            # 3. Buffer accumulé > 80 caractères = évite trop d'accumulation
-            # 4. Timeout de 1.5s depuis dernier fragment = fin probable
-            
-            buffer_text = " ".join(self._fragment_buffer)
-            is_long_fragment = len(text) > 50
-            has_strong_punct = text.rstrip().endswith(('.', '!', '?'))
-            buffer_full = len(buffer_text) > 80
-            timeout_reached = (current_time - self._last_fragment_time) > 1.5 if self._last_fragment_time > 0 else False
-            
-            should_flush = is_long_fragment or has_strong_punct or buffer_full or timeout_reached
-            
-            if should_flush and buffer_text.strip():
-                logger.info(f"TTS (Stream) met en file d'attente : '{buffer_text[:40]}...'")
-                self.queue.put(buffer_text)
-                self._fragment_buffer = []
-            
-            self._last_fragment_time = current_time
+        # Envoi immédiat de la phrase complète sans découpage
+        logger.info(f"TTS (Phrase complète) : '{text[:50]}...'")
+        self.queue.put(text.strip())
 
     def start(self):
         """Lance le worker et abonne le module aux événements de streaming"""

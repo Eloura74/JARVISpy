@@ -29,36 +29,59 @@ class GoogleCalendarService:
     def _authenticate(self):
         """Charge le token ou lance le flux d'authentification navigateur."""
         try:
+            # Vérification credentials.json
+            if not os.path.exists(self.credentials_path):
+                logger.error(f"❌ ERREUR: Le fichier {self.credentials_path} est introuvable!")
+                logger.error("📋 Solution: Téléchargez credentials.json depuis Google Cloud Console")
+                logger.error("   1. https://console.cloud.google.com/apis/credentials")
+                logger.error("   2. Créez un ID client OAuth 2.0 (Application de bureau)")
+                logger.error("   3. Téléchargez le JSON et renommez-le en 'credentials.json'")
+                self.service = None
+                return
+            
+            logger.info(f"✓ Fichier {self.credentials_path} trouvé")
+            
             # Token déjà existant ?
             if os.path.exists(self.token_path):
+                logger.info(f"✓ Token existant trouvé: {self.token_path}")
                 self.creds = Credentials.from_authorized_user_file(self.token_path, self.SCOPES)
             
             # S'il n'y a pas de token ou s'il est expiré
             if not self.creds or not self.creds.valid:
                 if self.creds and self.creds.expired and self.creds.refresh_token:
-                    logger.info("Rafraîchissement du token Google Calendar...")
-                    self.creds.refresh(Request())
-                else:
-                    if not os.path.exists(self.credentials_path):
-                        logger.warning(f"Le fichier {self.credentials_path} est introuvable. "
-                                       f"Impossible d'activer Google Calendar. "
-                                       f"Veuillez le télécharger depuis Google Cloud Console.")
-                        return
-
-                    logger.info("Ouverture du navigateur pour l'authentification Google OAuth2...")
+                    logger.info("🔄 Rafraîchissement du token Google Calendar...")
+                    try:
+                        self.creds.refresh(Request())
+                        logger.info("✓ Token rafraîchi avec succès")
+                    except Exception as refresh_error:
+                        logger.warning(f"⚠️ Échec du rafraîchissement: {refresh_error}")
+                        logger.info("🗑️ Suppression du token expiré pour forcer nouvelle authentification...")
+                        if os.path.exists(self.token_path):
+                            os.remove(self.token_path)
+                        self.creds = None
+                
+                # Si pas de credentials valides, on lance l'authentification
+                if not self.creds or not self.creds.valid:
+                    logger.info("🌐 Ouverture du navigateur pour l'authentification Google OAuth2...")
+                    logger.info("   Veuillez autoriser l'accès à votre calendrier dans le navigateur")
                     # Le port 0 permet de trouver un port libre automatiquement
                     flow = InstalledAppFlow.from_client_secrets_file(self.credentials_path, self.SCOPES)
                     self.creds = flow.run_local_server(port=0)
+                    logger.info("✓ Authentification réussie")
 
                 # Sauvegarde du nouveau token pour les prochaines exécutions
                 with open(self.token_path, 'w') as token:
                     token.write(self.creds.to_json())
+                logger.info(f"✓ Token sauvegardé: {self.token_path}")
 
             self.service = build('calendar', 'v3', credentials=self.creds)
-            logger.info("Connexion Google Calendar établie avec succès.")
+            logger.info("✅ Connexion Google Calendar établie avec succès")
             
         except Exception as e:
-            logger.error(f"Erreur d'authentification Google Calendar: {str(e)}")
+            logger.error(f"❌ Erreur d'authentification Google Calendar: {str(e)}")
+            logger.error(f"   Type d'erreur: {type(e).__name__}")
+            import traceback
+            logger.error(f"   Traceback: {traceback.format_exc()}")
             self.service = None
 
     def get_upcoming_events(self, max_results: int = 10) -> str:

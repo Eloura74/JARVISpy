@@ -37,17 +37,37 @@ Toutes les modifications notables du projet sont documentées dans ce fichier.
   - NeuralLog : gaps 15px → 10px, padding fragments 6px → 5px
 - **Résultat** : +15% d'espace utile, interface plus dense et professionnelle
 
-### �� Audio & Voix
+### 🎤 Audio & Voix
 
-#### Optimisation TTS - Élimination des Pauses Étranges
+#### Optimisation TTS - Voix Naturelle et Fluide (v3 - RADICAL)
 
-- **Buffer intelligent** : Regroupement des fragments courts avant synthèse vocale
-  - Évite les micro-pauses entre fragments de phrases
-  - Conditions de flush optimisées (longueur, ponctuation, timeout)
-  - Fluidité vocale grandement améliorée
-- **Filtrage Gemini** : Envoi uniquement des phrases > 15 caractères
-  - Suppression du découpage sur `\n` (trop agressif)
-  - Conservation uniquement de la ponctuation forte (. ! ?)
+- **Vitesse optimisée** : Speed réduite de 1.0 → 0.95
+  - Voix plus naturelle et moins robotique
+  - Meilleure articulation et compréhension
+- **STREAMING DÉSACTIVÉ** : Solution radicale anti-pauses
+  - ❌ Plus de découpage en fragments pendant le streaming
+  - ✅ Phrase complète envoyée au TTS d'un seul coup
+  - ✅ Zéro pause entre "et vous" / "même" / etc.
+  - **Trade-off** : Légère latence avant début de parole (mais fluidité parfaite)
+- **Buffer simplifié** :
+  - Suppression de toute logique de découpage
+  - Envoi direct de la phrase reçue
+  - **Résultat** : Fluidité vocale absolue, zéro interruption
+
+### 🔧 Services
+
+#### Google Calendar - Diagnostics Améliorés & Auto-Fix
+
+- **Logging détaillé** : Messages d'erreur explicites avec emojis
+  - ✓ Confirmation de chaque étape d'authentification
+  - ❌ Erreurs claires avec solutions
+  - 📋 Instructions complètes si credentials.json manquant
+- **Traceback complet** : Facilite le diagnostic des problèmes OAuth
+- **Guide intégré** : URL Google Cloud Console + étapes de configuration
+- **Auto-réparation token expiré** :
+  - 🗑️ Suppression automatique du token.json invalide
+  - 🔄 Réauthentification automatique via navigateur
+  - ✅ Plus besoin de supprimer manuellement le fichier
 
 ---
 

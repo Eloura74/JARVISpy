@@ -121,13 +121,8 @@ class Brain:
                             full_text += txt
                             current_sentence += txt
                             
-                            # Envoi uniquement sur ponctuation forte ET si phrase > 15 caractères
-                            # Évite les micro-fragments qui créent des pauses étranges
-                            if any(p in txt for p in [". ", "! ", "? "]):
-                                frag = current_sentence.strip()
-                                if frag and len(frag) > 15:
-                                    await bus.emit("brain.stream_fragment", {"text": frag})
-                                    current_sentence = ""
+                            # STREAMING DÉSACTIVÉ pour fluidité maximale
+                            # On accumule tout et on envoie uniquement la phrase complète à la fin
                         
                         # Récupération MANUELLE des appels d'outils demandés par le LLM
                         if getattr(chunk, 'function_calls', None):
@@ -204,8 +199,9 @@ class Brain:
                 continue
 
             # --- SI AUCUN OUTIL N'A ÉTÉ APPELÉ, LA PHRASE EST TERMINEE ---
-            if current_sentence.strip():
-                await bus.emit("brain.stream_fragment", {"text": current_sentence.strip()})
+            # STREAMING COMPLÈTEMENT DÉSACTIVÉ - on envoie la phrase complète d'un coup
+            if full_text.strip():
+                await bus.emit("brain.stream_fragment", {"text": full_text.strip()})
             
             if full_text:
                 memory.store_message(role="user", content=text)
