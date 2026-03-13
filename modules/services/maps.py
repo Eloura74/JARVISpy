@@ -81,7 +81,12 @@ class MapsService:
             if data["status"] != "OK":
                 return {"error": f"Erreur Google Maps: {data.get('error_message', data['status'])}"}
 
-            route = data["routes"][0]
+            # Récupération de tous les itinéraires disponibles
+            routes = data.get("routes", [])
+            if not routes:
+                return {"error": "Aucun itinéraire trouvé"}
+            
+            route = routes[0]  # Itinéraire principal
             leg = route["legs"][0]
             
             # Temps avec trafic (si dispo)
@@ -110,6 +115,22 @@ class MapsService:
             else:
                 asyncio.create_task(bus.emit("maps.travel_info", result))
 
+            # Ajout des itinéraires alternatifs si disponibles
+            alternatives = []
+            if len(routes) > 1:
+                for i, alt_route in enumerate(routes[1:3], 1):  # Max 2 alternatives
+                    alt_leg = alt_route["legs"][0]
+                    alt_duration = alt_leg["duration_in_traffic"]["text"] if "duration_in_traffic" in alt_leg else alt_leg["duration"]["text"]
+                    alt_distance = alt_leg["distance"]["text"]
+                    alternatives.append({
+                        "route_number": i + 1,
+                        "duration": alt_duration,
+                        "distance": alt_distance,
+                        "via": alt_route.get("summary", f"Itinéraire {i+1}")
+                    })
+            
+            result["alternatives"] = alternatives
+
             # Résultat épuré pour le LLM (sans le polyline énorme et sans la clé API)
             llm_result = {
                 "destination": result["destination"],
@@ -118,6 +139,11 @@ class MapsService:
             }
             if target_dt:
                 llm_result["suggested_departure"] = result["suggested_departure"]
+            
+            # Ajout des alternatives pour le LLM
+            if alternatives:
+                llm_result["alternatives"] = alternatives
+                llm_result["alternatives_count"] = len(alternatives)
 
             return llm_result
 

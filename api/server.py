@@ -148,9 +148,27 @@ async def websocket_endpoint(websocket: WebSocket):
                 
                 logger.debug(f"Message WS reçu [{event_type}]: {payload}")
                 
+                # Gestion spéciale pour le changement de thème (sync ESP32)
+                if event_type == "ui.theme_changed":
+                    theme = payload.get("theme", "default")
+                    # Mapping thème UI → thème ESP32
+                    theme_map = {
+                        "default": "CLASSIC",
+                        "matrix": "MATRIX",
+                        "hacker": "IRONMAN",
+                        "bronze": "COPPER"
+                    }
+                    esp_theme = theme_map.get(theme, "CLASSIC")
+                    
+                    # Envoi vers ESP32 via le bus
+                    from modules.hardware.esp_sphere import esp_sphere
+                    if esp_sphere._connected:
+                        esp_sphere.theme(esp_theme)
+                        logger.info(f"Thème ESP32 synchronisé: {esp_theme}")
+                
                 # Relais du message vers le bus d'événements interne
                 # On s'assure de l'envoyer sur la boucle principale si elle est définie
-                # pour garder une cohérence d'état (ex: toggle micro)
+                # (pour éviter les problèmes de thread-safety)
                 main_loop = getattr(bus, 'main_loop', None)
                 if main_loop and not main_loop.is_closed():
                     main_loop.call_soon_threadsafe(

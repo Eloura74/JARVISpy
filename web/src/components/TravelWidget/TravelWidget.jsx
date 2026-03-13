@@ -112,6 +112,19 @@ export const TravelWidget = () => {
             Depuis: {data.origin}
           </span>
         </div>
+
+        {data.alternatives && data.alternatives.length > 0 && (
+          <div className="alternatives-section">
+            <div className="alternatives-header">ITINÉRAIRES ALTERNATIFS</div>
+            {data.alternatives.map((alt, idx) => (
+              <div key={idx} className="alternative-route">
+                <span className="alt-number">Route {alt.route_number}</span>
+                <span className="alt-duration">{alt.duration}</span>
+                <span className="alt-via">{alt.via}</span>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
       <div className="widget-footer">

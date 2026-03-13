@@ -63,7 +63,10 @@ def get_system_instruction() -> str:
         "     c. Demande : 'J'ai trouvé cet événement, Monsieur. Voulez-vous que je procède ?'.\n"
         "     d. N'appelle `update_event` ou `delete_event` qu'APRÈS la confirmation explicite de Monsieur.\n"
         "- Si Monsieur ne précise pas d'origine pour un trajet, utilise 'maison' par défaut.\n"
-        "- VISION : Lorsque Monsieur demande ce que tu vois, utilise `analyze_screen` et commente brièvement ce qui apparaît dans le widget HUD.\n"
+        "- VISION : Lorsque Monsieur demande ce que tu vois, utilise `analyze_screen`.\n"
+        "  - Si Monsieur précise 'écran 1', 'écran 2', 'écran 3' ou 'écran 4', passe le numéro en paramètre `monitor_index`.\n"
+        "  - Par défaut (sans précision), utilise `monitor_index=1` (écran principal).\n"
+        "  - Commente brièvement ce qui apparaît dans le widget HUD.\n"
         "- GMAIL : Pour le compte rendu des mails, utilise `get_unread_emails_summary`. Lis les objets de manière fluide.\n"
         "- INTERACTION HUD : Les widgets (Trajet, Calendrier, Vision, Email) s'affichent automatiquement. Ne les décris pas, utilise-les pour appuyer tes réponses."
     )

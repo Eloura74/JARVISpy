@@ -74,13 +74,21 @@ export const Settings = () => {
           gemini_api_key: data._raw_gemini || data.gemini_api_key || "",
           tavily_api_key: data._raw_tavily || data.tavily_api_key || "",
           ha_token: data._raw_ha_token || data.ha_token || "",
-          gmail_enabled: data.gmail_enabled === "true" || data.gmail_enabled === true,
-          wa_notify_on_alerts: data.wa_notify_on_alerts === "true" || data.wa_notify_on_alerts === true,
-          toast_enabled: data.toast_enabled === "true" || data.toast_enabled === true,
-          vision_enabled: data.vision_enabled === "true" || data.vision_enabled === true,
-          proactive_enabled: data.proactive_enabled === "true" || data.proactive_enabled === true,
+          gmail_enabled:
+            data.gmail_enabled === "true" || data.gmail_enabled === true,
+          wa_notify_on_alerts:
+            data.wa_notify_on_alerts === "true" ||
+            data.wa_notify_on_alerts === true,
+          toast_enabled:
+            data.toast_enabled === "true" || data.toast_enabled === true,
+          vision_enabled:
+            data.vision_enabled === "true" || data.vision_enabled === true,
+          proactive_enabled:
+            data.proactive_enabled === "true" ||
+            data.proactive_enabled === true,
           ui_theme: localStorage.getItem("jarvis_theme") || "matrix",
-          google_maps_api_key: data._raw_google_maps || data.google_maps_api_key || "",
+          google_maps_api_key:
+            data._raw_google_maps || data.google_maps_api_key || "",
         }));
         loadVoices(data.kokoro_voice);
       }
@@ -145,14 +153,19 @@ export const Settings = () => {
     const { name, value, type, checked } = e.target;
     setFormData((prev) => ({
       ...prev,
-      [name]: type === "checkbox" ? checked : (type === "number" ? Number(value) : value),
+      [name]:
+        type === "checkbox"
+          ? checked
+          : type === "number"
+            ? Number(value)
+            : value,
     }));
   };
 
   const handleSave = async () => {
     setIsSaving(true);
     // Préparer le payload avec les types corrects pour l'API (Pydantic 422 Fix)
-    const payload = { 
+    const payload = {
       ...formData,
       vision_enabled: Boolean(formData.vision_enabled),
       gmail_enabled: Boolean(formData.gmail_enabled),
@@ -162,7 +175,7 @@ export const Settings = () => {
       camera_index: parseInt(formData.camera_index || 0),
       presence_check_interval: parseInt(formData.presence_check_interval || 5),
       absence_threshold: parseInt(formData.absence_threshold || 600),
-      system_monitor_interval: parseInt(formData.system_monitor_interval || 60)
+      system_monitor_interval: parseInt(formData.system_monitor_interval || 60),
     };
 
     // Remap location data so backend can process it separately
@@ -181,6 +194,28 @@ export const Settings = () => {
         const theme = payload.ui_theme || "default";
         localStorage.setItem("jarvis_theme", theme);
         document.documentElement.setAttribute("data-theme", theme);
+
+        // Synchronisation du thème vers ESP32 via WebSocket
+        import("../../services/websocket.js").then((module) => {
+          const wsService = module.default;
+          if (
+            wsService &&
+            wsService.ws &&
+            wsService.ws.readyState === WebSocket.OPEN
+          ) {
+            wsService.ws.send(
+              JSON.stringify({
+                event: "ui.theme_changed",
+                data: { theme: theme },
+              }),
+            );
+            console.log(`[Settings] Thème envoyé à ESP32: ${theme}`);
+          } else {
+            console.warn(
+              "[Settings] WebSocket non connecté, impossible de synchroniser le thème ESP32",
+            );
+          }
+        });
 
         await fetch("/api/settings/locations", {
           method: "POST",

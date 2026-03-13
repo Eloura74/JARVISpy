@@ -6,7 +6,45 @@ Toutes les modifications notables du projet sont documentées dans ce fichier.
 
 ## [0.2.1] - 2026-03-13
 
-### 🎨 UI/UX - Optimisation Espacement
+### 🐛 Corrections de Bugs
+
+#### Screenshot Multi-Écran
+
+- **Décalage corrigé** : L'écran capturé correspond maintenant au numéro demandé
+  - Bug : "écran 2" capturait l'écran 1 (off-by-one error)
+  - Fix : Vérification `monitor_index < 1` et utilisation correcte de `monitors[monitor_index]`
+
+#### Popup Itinéraire
+
+- **Centrage parfait** : Widget TravelWidget maintenant correctement centré
+  - Bug : `transform-origin: right center` causait un décalage
+  - Fix : Simplification des animations avec `transform: translate(-50%, -50%)` constant
+  - Écran 1 par défaut si non précisé
+  - Gemini extrait automatiquement le numéro d'écran de la commande
+- **Prompt optimisé** : Instructions claires pour `analyze_screen(monitor_index=X)`
+
+#### Itinéraires Multiples (Google Maps)
+
+- **Popup centré** : Widget TravelWidget repositionné au centre de l'écran
+  - Position : `top: 50%, left: 50%, transform: translate(-50%, -50%)`
+  - Largeur augmentée : 320px → 400px
+- **Routes alternatives** : Affichage jusqu'à 2 itinéraires alternatifs
+  - Durée avec trafic pour chaque route
+  - Via/résumé de l'itinéraire
+  - Design visuel distinct (bordure bleue, background subtil)
+- **Choix vocal** : JARVIS annonce les alternatives vocalement
+  - "Route 1: 25 min via A6, Route 2: 28 min via N7"
+  - L'utilisateur choisit vocalement
+
+#### Synchronisation Thème ESP32
+
+- **Sync automatique** : Changement de thème dans l'UI → ESP32 mis à jour
+  - WebSocket `ui.theme_changed` → Backend → ESP32
+  - Mapping thèmes : default→CLASSIC, matrix→MATRIX, hacker→IRONMAN, bronze→COPPER
+- **Temps réel** : Changement instantané sans redémarrage
+- **Cohérence visuelle** : Interface web et sphère physique toujours synchronisées
+
+### �� UI/UX - Optimisation Espacement
 
 #### Compatibilité Cross-Browser (Opera, Chrome, Firefox, Safari)
 

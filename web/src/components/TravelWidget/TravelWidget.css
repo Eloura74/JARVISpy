@@ -1,8 +1,9 @@
 .travel-widget {
   position: fixed;
-  top: 100px;
-  right: 20px;
-  width: 320px;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 400px;
   z-index: 1000;
   border-left: 3px solid var(--accent-blue, #00d2ff);
   background: rgba(10, 15, 25, 0.85);
@@ -10,8 +11,9 @@
   padding: 15px;
   border-radius: 4px;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
-  transition: all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
-  transform-origin: right center;
+  transition:
+    opacity 0.4s ease,
+    visibility 0.4s ease;
 }
 
 .travel-widget.hidden {
@@ -27,17 +29,17 @@
 @keyframes travelSlideIn {
   from {
     opacity: 0;
-    transform: translateX(50px) scale(0.9);
+    transform: translate(-50%, -50%) scale(0.95);
   }
   to {
     opacity: 1;
-    transform: translateX(0) scale(1);
+    transform: translate(-50%, -50%) scale(1);
   }
 }
 
 .travel-widget.fade-out {
   opacity: 0;
-  transform: translateX(20px);
+  transform: translate(-50%, -50%) scale(0.95);
 }
 
 .widget-header {
@@ -199,8 +201,54 @@
   color: rgba(255, 255, 255, 0.4);
 }
 
+.alternatives-section {
+  margin-top: 15px;
+  padding-top: 15px;
+  border-top: 1px solid rgba(0, 210, 255, 0.2);
+}
+
+.alternatives-header {
+  font-size: 0.65rem;
+  color: var(--accent-blue, #00d2ff);
+  font-weight: 600;
+  letter-spacing: 1px;
+  margin-bottom: 10px;
+  text-transform: uppercase;
+}
+
+.alternative-route {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 8px;
+  margin-bottom: 8px;
+  background: rgba(0, 210, 255, 0.05);
+  border-left: 2px solid rgba(0, 210, 255, 0.3);
+  border-radius: 3px;
+}
+
+.alt-number {
+  font-size: 0.7rem;
+  color: var(--accent-blue, #00d2ff);
+  font-weight: 600;
+}
+
+.alt-duration {
+  font-size: 0.85rem;
+  color: #fff;
+  font-weight: 500;
+}
+
+.alt-via {
+  font-size: 0.7rem;
+  color: rgba(255, 255, 255, 0.6);
+  font-style: italic;
+}
+
 .widget-footer {
   margin-top: 15px;
+  padding-top: 10px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
   font-size: 0.6rem;
   display: flex;
   justify-content: flex-end;

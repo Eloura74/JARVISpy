@@ -22,11 +22,24 @@ def analyze_screen(monitor_index: int = 1) -> str:
     try:
         with mss.mss() as sct:
             monitors = sct.monitors
-            # monitors[0] est l'ensemble des écrans, monitors[1] est le premier écran
+            
+            # Diagnostic complet des écrans détectés
+            logger.info(f"=== DIAGNOSTIC ÉCRANS ===")
+            logger.info(f"Nombre total d'écrans détectés: {len(monitors) - 1}")
+            for i, mon in enumerate(monitors):
+                if i == 0:
+                    logger.info(f"monitors[{i}] = Tous les écrans combinés: {mon}")
+                else:
+                    logger.info(f"monitors[{i}] = Écran {i}: {mon}")
+            
+            # L'utilisateur demande "écran 1" → on veut monitors[1], pas monitors[0]
+            if monitor_index < 1:
+                monitor_index = 1
             if monitor_index >= len(monitors):
                 logger.warning(f"Écran {monitor_index} non trouvé, retour sur l'écran 1")
                 monitor_index = 1
                 
+            logger.info(f"Capture de monitors[{monitor_index}] pour la demande 'écran {monitor_index}'")
             screenshot = sct.grab(monitors[monitor_index])
 
         # Conversion en image PIL

@@ -141,6 +141,10 @@ class WebSocketService {
       case "maps.travel_info":
         store.setState({ travelInfo: data, orbStatus: "idle" });
         break;
+      case "ui.theme_changed":
+        // Synchronisation du thème vers ESP32
+        console.log(`[WS] Thème changé: ${data.theme}`);
+        break;
       default:
         console.debug(`[WS Event] ${event}`, data);
     }
