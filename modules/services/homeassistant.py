@@ -39,7 +39,9 @@ class HomeAssistantService:
         try:
             url = f"{self.base_url}/api/states/{entity_id}"
             logger.info(f"Récupération de l'état de l'entité HA : {entity_id}")
-            with httpx.Client(timeout=5.0, verify=False) as client:
+            # Vérification SSL activée (verify=True par défaut)
+            # Si certificat auto-signé, définir REQUESTS_CA_BUNDLE ou utiliser verify='/path/to/cert.pem'
+            with httpx.Client(timeout=5.0) as client:
                 resp = client.get(url, headers=self.headers)
                 resp.raise_for_status()
                 data = resp.json()
@@ -81,7 +83,7 @@ class HomeAssistantService:
                     logger.warning(f"extra_params non parsable comme JSON : {extra}")
 
             logger.info(f"Appel HA: {domain}.{service} sur {entity_id}")
-            with httpx.Client(timeout=5.0, verify=False) as client:
+            with httpx.Client(timeout=5.0) as client:
                 resp = client.post(url, headers=self.headers, json=body)
                 resp.raise_for_status()
 
@@ -105,7 +107,7 @@ class HomeAssistantService:
         try:
             url = f"{self.base_url}/api/states"
             logger.info(f"Listage des entités HA (filtre: '{domain_filter}')...")
-            with httpx.Client(timeout=10.0, verify=False) as client:
+            with httpx.Client(timeout=10.0) as client:
                 resp = client.get(url, headers=self.headers)
                 resp.raise_for_status()
                 all_states = resp.json()
@@ -144,7 +146,7 @@ class HomeAssistantService:
 
         try:
             url = f"{self.base_url}/api/states"
-            with httpx.Client(timeout=8.0, verify=False) as client:
+            with httpx.Client(timeout=8.0) as client:
                 resp = client.get(url, headers=self.headers)
                 resp.raise_for_status()
                 all_states = resp.json()

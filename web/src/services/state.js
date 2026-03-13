@@ -28,6 +28,10 @@ class StateStore {
     this.listeners = new Set();
   }
 
+  getState() {
+    return this.state;
+  }
+
   setState(newState) {
     this.state = { ...this.state, ...newState };
     this.notify();

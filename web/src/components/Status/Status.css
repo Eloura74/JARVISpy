@@ -2,8 +2,12 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 10px 20px;
+  padding: 12px 20px;
   width: 100%;
+  min-height: 50px;
+  /* Normalisation cross-browser */
+  box-sizing: border-box;
+  flex-shrink: 0;
 }
 
 .status-logo {
@@ -26,6 +30,11 @@
   font-size: 1.1rem;
   letter-spacing: 2px;
   color: var(--primary);
+  /* Normalisation rendu texte */
+  line-height: 1.4;
+  white-space: nowrap;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 .logo-text .v {

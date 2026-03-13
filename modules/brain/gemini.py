@@ -121,11 +121,13 @@ class Brain:
                             full_text += txt
                             current_sentence += txt
                             
-                            if any(p in txt for p in [". ", "! ", "? ", "\n"]):
+                            # Envoi uniquement sur ponctuation forte ET si phrase > 15 caractères
+                            # Évite les micro-fragments qui créent des pauses étranges
+                            if any(p in txt for p in [". ", "! ", "? "]):
                                 frag = current_sentence.strip()
-                                if frag:
+                                if frag and len(frag) > 15:
                                     await bus.emit("brain.stream_fragment", {"text": frag})
-                                current_sentence = ""
+                                    current_sentence = ""
                         
                         # Récupération MANUELLE des appels d'outils demandés par le LLM
                         if getattr(chunk, 'function_calls', None):
@@ -135,13 +137,6 @@ class Brain:
                     # Si on arrive ici, le flux s'est terminé avec succès
                     break
 
-                except asyncio.TimeoutError:
-                    logger.warning(f"[BRAIN] Timeout (10s) de l'API Gemini. Nouvelle tentative...")
-                    if attempt < max_retries - 1:
-                        wait_time = (attempt + 1) * 3
-                        await asyncio.sleep(wait_time)
-                        continue
-                    return "Désolé Monsieur, les serveurs cognitifs ne répondent pas. J'ai annulé l'opération pour éviter de bloquer le système."
                 except asyncio.TimeoutError:
                     logger.warning(f"[BRAIN] Timeout (15s) de l'API Gemini. Nouvelle tentative...")
                     if attempt < max_retries - 1:

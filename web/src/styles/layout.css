@@ -1,15 +1,18 @@
 .app-layout {
-  width: 98vw;
-  height: 98vh;
+  width: 99vw;
+  height: 99vh;
   display: grid;
   grid-template-areas:
     "status status status"
     "left orbit right"
     "left orbit right";
-  grid-template-columns: 360px 1fr 360px;
-  grid-template-rows: auto 1fr;
-  gap: 25px;
-  padding: 15px;
+  grid-template-columns: 380px 1fr 380px;
+  grid-template-rows: minmax(50px, auto) 1fr;
+  gap: 12px;
+  padding: 8px;
+  /* Normalisation cross-browser */
+  box-sizing: border-box;
+  overflow: hidden;
 }
 
 #status-mount {
@@ -20,7 +23,7 @@
   grid-area: left;
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 12px;
 }
 
 .orb-mount {
@@ -35,7 +38,7 @@
   grid-area: right;
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 12px;
 }
 
 /* Amélioration des slots de contenu */

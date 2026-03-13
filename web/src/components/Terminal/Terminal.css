@@ -4,14 +4,13 @@
   height: 100%;
   width: 100%;
   overflow: hidden;
-  border-radius: 8px;
 }
 
 .terminal-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 10px 14px;
+  padding: 8px 12px;
   background: rgba(0, 0, 0, 0.2);
   border-bottom: 1px solid var(--glass-border);
 }
@@ -48,9 +47,9 @@
 
 .terminal-content {
   flex: 1;
-  padding: 12px;
+  padding: 8px 10px;
   font-family: var(--font-mono);
-  font-size: 0.85rem;
+  font-size: 0.82rem;
   overflow-y: auto;
   background: transparent;
 }

@@ -28,9 +28,15 @@ app.include_router(print_status_router)
 app.include_router(wa_webhook_router)
 
 # Configuration CORS pour permettre aux interfaces web de se connecter
+# Restreint aux origines locales pour la sécurité
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # À restreindre en production !
+    allow_origins=[
+        "http://localhost:8000",
+        "http://127.0.0.1:8000",
+        "http://localhost:5173",  # Vite dev server
+        "http://127.0.0.1:5173"
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

@@ -16,7 +16,7 @@
 .neural-log-list {
   display: flex;
   flex-direction: column;
-  gap: 15px;
+  gap: 10px;
   max-height: 200px;
   overflow-y: auto;
   padding-right: 5px;
@@ -33,14 +33,14 @@
 
 .neural-log-item {
   border-bottom: 1px solid rgba(0, 255, 255, 0.1);
-  padding-bottom: 10px;
+  padding-bottom: 8px;
 }
 
 .query-trigger {
   font-family: "Orbitron", sans-serif;
   font-size: 0.65rem;
   color: var(--primary);
-  margin-bottom: 8px;
+  margin-bottom: 6px;
   text-transform: uppercase;
   letter-spacing: 1px;
 }
@@ -53,10 +53,10 @@
 
 .memory-fragment {
   font-family: var(--font-main);
-  font-size: 0.8rem;
+  font-size: 0.78rem;
   color: var(--text-main);
   background: hsla(var(--hue-primary), 40%, 40%, 0.1);
-  padding: 6px 10px;
+  padding: 5px 8px;
   border-radius: 4px;
   line-height: 1.3;
 }

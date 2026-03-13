@@ -3,7 +3,7 @@
   flex-direction: column;
   height: 100%;
   width: 100%;
-  gap: 15px;
+  gap: 10px;
 }
 
 .chat-box {
@@ -11,15 +11,15 @@
   overflow-y: auto;
   display: flex;
   flex-direction: column;
-  gap: 15px;
-  padding: 10px;
+  gap: 10px;
+  padding: 6px;
 }
 
 .msg {
   max-width: 85%;
-  padding: 12px 18px;
-  border-radius: 12px;
-  font-size: 1rem;
+  padding: 10px 14px;
+  border-radius: 10px;
+  font-size: 0.95rem;
   line-height: 1.4;
   position: relative;
   font-family: var(--font-main);
@@ -44,10 +44,10 @@
 
 .chat-footer {
   display: flex;
-  gap: 10px;
+  gap: 8px;
   background: var(--panel-bg);
-  padding: 8px;
-  border-radius: 12px;
+  padding: 6px;
+  border-radius: 10px;
   border: 1px solid var(--glass-border);
   align-items: center;
 }
@@ -57,7 +57,7 @@
   background: transparent;
   border: none;
   color: var(--text-main);
-  padding: 10px;
+  padding: 8px;
   font-family: var(--font-tech);
   font-size: 0.85rem;
   letter-spacing: 1px;

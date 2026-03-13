@@ -50,6 +50,12 @@ class DatabaseManager:
             content TEXT NOT NULL,
             timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         );
+        
+        -- Index pour optimiser les requêtes sur timestamp (get_recent_history)
+        CREATE INDEX IF NOT EXISTS idx_conversations_timestamp ON conversations(timestamp DESC);
+        
+        -- Index pour optimiser les recherches par clé dans facts
+        CREATE INDEX IF NOT EXISTS idx_facts_key ON facts(key);
         """
         try:
             with self._get_connection() as conn:
@@ -92,6 +98,19 @@ class DatabaseManager:
         except sqlite3.Error as e:
             logger.error(f"Erreur fetch_one ({query}): {e}")
             return None
+    
+    def optimize_database(self):
+        """
+        Optimise la base de données en exécutant VACUUM pour récupérer l'espace disque
+        et reconstruire les index. À appeler périodiquement (ex: au démarrage).
+        """
+        try:
+            with self._get_connection() as conn:
+                conn.execute("VACUUM")
+                conn.commit()
+            logger.info("Base de données optimisée (VACUUM exécuté)")
+        except sqlite3.Error as e:
+            logger.warning(f"Erreur lors de l'optimisation de la base de données: {e}")
 
 # Instance globale (Singleton)
 db_manager = DatabaseManager()
