@@ -15,7 +15,7 @@ export const Settings = () => {
     kokoro_voice: "",
     openweather_api_key: "",
     default_city: "",
-    ui_theme: localStorage.getItem("jarvis_theme") || "default",
+    ui_theme: localStorage.getItem("jarvis_theme") || "matrix",
     vision_enabled: false,
     camera_index: "0",
     proactive_enabled: false,
@@ -43,12 +43,19 @@ export const Settings = () => {
     const handleOpen = () => {
       setIsOpen(true);
       loadSettings();
-      if (dialogRef.current) dialogRef.current.showModal();
     };
 
     window.addEventListener("open-settings", handleOpen);
     return () => window.removeEventListener("open-settings", handleOpen);
   }, []);
+
+  useEffect(() => {
+    if (isOpen && dialogRef.current) {
+      if (!dialogRef.current.open) {
+        dialogRef.current.showModal();
+      }
+    }
+  }, [isOpen]);
 
   useEffect(() => {
     if (activeTab === "memory" && isOpen) {
@@ -63,39 +70,17 @@ export const Settings = () => {
         const data = await response.json();
         setFormData((prev) => ({
           ...prev,
-          gemini_api_key: data._raw_gemini || "",
-          tavily_api_key: data._raw_tavily || "",
-          ha_token: data._raw_ha_token || "",
-          kokoro_voice: data.kokoro_voice || "",
-          openweather_api_key:
-            data._raw_openweather || data.openweather_api_key || "",
-          default_city: data.default_city || "",
-          ui_theme: localStorage.getItem("jarvis_theme") || "default",
-          vision_enabled:
-            data.vision_enabled === "true" || data.vision_enabled === true,
-          camera_index: data.camera_index || "0",
-          proactive_enabled:
-            data.proactive_enabled === "true" ||
-            data.proactive_enabled === true,
-          presence_check_interval: data.presence_check_interval || 30,
-          absence_threshold: data.absence_threshold || 60,
-          system_monitor_interval: data.system_monitor_interval || 60,
-          gmail_enabled:
-            data.gmail_enabled === "true" || data.gmail_enabled === true,
-          wa_default_phone: data.wa_default_phone || "",
-          wa_notify_on_alerts:
-            data.wa_notify_on_alerts === "true" ||
-            data.wa_notify_on_alerts === true,
-          ha_url: data.ha_url || "",
-          moonraker_url: data.moonraker_url || "",
-          bambu_ip: data.bambu_ip || "",
-          bambu_serial: data.bambu_serial || "",
-          bambu_access_code:
-            data._raw_bambu_access_code || data.bambu_access_code || "",
-          google_maps_api_key:
-            data._raw_google_maps || data.google_maps_api_key || "",
-          toast_enabled:
-            data.toast_enabled === "true" || data.toast_enabled === true,
+          ...data,
+          gemini_api_key: data._raw_gemini || data.gemini_api_key || "",
+          tavily_api_key: data._raw_tavily || data.tavily_api_key || "",
+          ha_token: data._raw_ha_token || data.ha_token || "",
+          gmail_enabled: data.gmail_enabled === "true" || data.gmail_enabled === true,
+          wa_notify_on_alerts: data.wa_notify_on_alerts === "true" || data.wa_notify_on_alerts === true,
+          toast_enabled: data.toast_enabled === "true" || data.toast_enabled === true,
+          vision_enabled: data.vision_enabled === "true" || data.vision_enabled === true,
+          proactive_enabled: data.proactive_enabled === "true" || data.proactive_enabled === true,
+          ui_theme: localStorage.getItem("jarvis_theme") || "matrix",
+          google_maps_api_key: data._raw_google_maps || data.google_maps_api_key || "",
         }));
         loadVoices(data.kokoro_voice);
       }
@@ -166,7 +151,14 @@ export const Settings = () => {
 
   const handleSave = async () => {
     setIsSaving(true);
-    const payload = { ...formData };
+    // Préparer le payload avec les types corrects pour l'API
+    const payload = { 
+      ...formData,
+      camera_index: parseInt(formData.camera_index),
+      presence_check_interval: parseInt(formData.presence_check_interval),
+      absence_threshold: parseInt(formData.absence_threshold),
+      system_monitor_interval: parseInt(formData.system_monitor_interval)
+    };
 
     // Remap location data so backend can process it separately if needed
     // or we save location separately
@@ -348,6 +340,7 @@ export const Settings = () => {
                   <option value="default">SYSTÈME BLEU (ORIGINAL)</option>
                   <option value="bronze">BRONZE ÉLÉGANT (PREMIUM)</option>
                   <option value="hacker">HACKER AMBER (TERMINAL)</option>
+                  <option value="matrix">SYSTÈME MATRIX (LEGACY)</option>
                 </select>
               </div>
             </div>

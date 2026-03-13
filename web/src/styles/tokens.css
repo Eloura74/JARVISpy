@@ -82,3 +82,27 @@
   --glow-soft: 0 0 8px var(--primary-glow);
   --glow-hard: 0 0 20px var(--primary-glow);
 }
+/* --- THEME 4: MATRIX REVOLUTION (TERMINAL) --- */
+[data-theme="matrix"] {
+  --hue-primary: 120; /* Matrix Green */
+  --hue-accent: 140;
+
+  --primary: hsl(var(--hue-primary), 100%, 50%);
+  --primary-glow: hsla(var(--hue-primary), 100%, 50%, 0.3);
+  --primary-dim: rgba(0, 5, 0, 0.98);
+
+  --text-main: #00ff41; /* Matrix Digital Rain Green */
+  --text-dim: #008f11;
+  --text-accent: #00ff41;
+
+  --panel-bg: rgba(0, 0, 0, 0.95);
+  --bg-image: none; /* Black background for Matrix */
+  --glass-border: hsla(var(--hue-primary), 100%, 50%, 0.4);
+  --glass-reflection: hsla(var(--hue-primary), 100%, 50%, 0.1);
+
+  --font-main: "Space Mono", monospace;
+  --font-tech: "Space Mono", monospace;
+
+  --glow-soft: 0 0 10px var(--primary-glow);
+  --glow-hard: 0 0 25px var(--primary-glow);
+}

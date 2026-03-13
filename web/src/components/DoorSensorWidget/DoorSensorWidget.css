@@ -1,0 +1,163 @@
+.door-sensor-widget {
+  margin-top: 15px;
+  border-left: 3px solid var(--primary);
+  animation: pulse-border-door 4s infinite;
+}
+
+.door-title {
+  font-size: 0.7rem;
+  letter-spacing: 1px;
+}
+
+.sensor-item {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  padding: 10px;
+  margin-bottom: 10px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 4px;
+}
+
+.sensor-item:last-child {
+  margin-bottom: 0;
+}
+
+.sensor-visual {
+  width: 60px;
+  height: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.sensor-image {
+  max-width: 100%;
+  max-height: 100%;
+  filter: drop-shadow(0 0 5px currentColor);
+}
+
+.sensor-info {
+  flex: 1;
+}
+
+.sensor-label {
+  font-size: 0.65rem;
+  color: rgba(255, 255, 255, 0.6);
+  margin-bottom: 4px;
+  text-transform: uppercase;
+}
+
+.sensor-status {
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+  font-weight: bold;
+  margin-bottom: 8px;
+}
+
+/* State: Secure (Orange/Gold) */
+.state-secure {
+  border-color: rgba(255, 165, 0, 0.3);
+  color: #ffcc00;
+}
+
+.state-secure .sensor-image {
+  color: #ffcc00;
+}
+
+.security-meter {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.meter-label {
+  font-size: 0.55rem;
+  color: rgba(255, 255, 255, 0.4);
+}
+
+.meter-bar {
+  flex: 1;
+  height: 4px;
+  background: rgba(255, 204, 0, 0.1);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.meter-fill {
+  height: 100%;
+  background: #ffcc00;
+  box-shadow: 0 0 8px #ffcc00;
+}
+
+/* State: Alert (Red) */
+.state-alert {
+  border-color: rgba(255, 0, 0, 0.3);
+  color: #ff3333;
+  background: rgba(255, 0, 0, 0.05);
+  animation: alert-bg-pulse 2s infinite;
+}
+
+.state-alert .sensor-status {
+  animation: text-flash 1s infinite;
+}
+
+.alert-icon-container {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.alert-pulse {
+  width: 10px;
+  height: 10px;
+  background: #ff3333;
+  border-radius: 50%;
+  box-shadow: 0 0 10px #ff3333;
+  animation: pulse-red 1s infinite;
+}
+
+@keyframes pulse-border-door {
+  0%,
+  100% {
+    border-left-color: var(--primary);
+  }
+  50% {
+    border-left-color: orange;
+  }
+}
+
+@keyframes alert-bg-pulse {
+  0%,
+  100% {
+    background: rgba(255, 0, 0, 0.05);
+  }
+  50% {
+    background: rgba(255, 0, 0, 0.1);
+  }
+}
+
+@keyframes text-flash {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.7;
+  }
+}
+
+@keyframes pulse-red {
+  0% {
+    transform: scale(0.9);
+    opacity: 0.7;
+  }
+  50% {
+    transform: scale(1.2);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(0.9);
+    opacity: 0.7;
+  }
+}

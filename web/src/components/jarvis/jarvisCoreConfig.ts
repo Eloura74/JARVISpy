@@ -27,6 +27,11 @@ export const updateJarvisThemeColors = (theme: string) => {
     JARVIS_COLORS.listening = { r: 0.9, g: 0.6, b: 0.3 };
     JARVIS_COLORS.thinking = { r: 1.0, g: 0.7, b: 0.4 };
     JARVIS_COLORS.speaking = { r: 1.0, g: 0.4, b: 0.0 }; // Orange/Copper
+  } else if (theme === "matrix") {
+    JARVIS_COLORS.idle = { r: 0.0, g: 1.0, b: 0.25 }; // Matrix Green
+    JARVIS_COLORS.listening = { r: 0.2, g: 1.0, b: 0.4 };
+    JARVIS_COLORS.thinking = { r: 0.1, g: 1.0, b: 0.3 };
+    JARVIS_COLORS.speaking = { r: 0.5, g: 1.0, b: 0.5 };
   } else {
     JARVIS_COLORS.idle = { r: 0.0, g: 0.7, b: 0.95 };
     JARVIS_COLORS.listening = { r: 0.0, g: 0.7, b: 0.95 };

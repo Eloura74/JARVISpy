@@ -76,7 +76,24 @@
   transform: rotate(90deg);
 }
 
-/* Helper pour masquer les scrollbars inutiles */
+/* Support pour les widgets centraux overlay */
+.center-widgets-container {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  pointer-events: none;
+  z-index: 1500;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.center-widgets-container > * {
+  pointer-events: auto;
+}
+
 .hide-scroll {
   scrollbar-width: none;
 }

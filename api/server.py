@@ -45,15 +45,15 @@ web_dir = os.path.join(base_dir, "web")
 if os.path.exists(os.path.join(dist_dir, "index.html")):
     static_dir = dist_dir
     logger.info("Utilisation de l'interface PRODUCTION (dist/)")
-    # Montage critique pour les assets Vite
     app.mount("/assets", StaticFiles(directory=os.path.join(dist_dir, "assets")), name="assets")
 else:
     static_dir = web_dir
     logger.info("Utilisation de l'interface DÉVELOPPEMENT (web/)")
-    # Montage critique pour les imports de modules JS/CSS en dev
+    # En DEV, on doit pouvoir servir tout /web pour les imports relatifs
     app.mount("/src", StaticFiles(directory=os.path.join(web_dir, "src")), name="src")
+    app.mount("/public", StaticFiles(directory=os.path.join(web_dir, "public")), name="public")
 
-# Montage générique pour les fichiers à la racine de static_dir (PNG, Favicon, etc)
+# Montage générique pour les fichiers à la racine (PNG, Favicon, etc)
 app.mount("/static", StaticFiles(directory=static_dir), name="static")
 
 # Liste des connexions WebSocket actives

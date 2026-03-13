@@ -37,7 +37,7 @@ function App() {
 
   useEffect(() => {
     console.log("[REACT APP] Initialisation J.A.R.V.I.S 0.3...");
-    const theme = localStorage.getItem("jarvis_theme") || "default";
+    const theme = localStorage.getItem("jarvis_theme") || "matrix";
     document.documentElement.setAttribute("data-theme", theme);
     document.body.classList.add("booting");
 

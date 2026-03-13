@@ -42,6 +42,9 @@ class Settings(BaseSettings):
     absence_threshold: int = 600
     system_monitor_interval: int = 60
     
+    # UI
+    ui_theme: str = "matrix"
+    
     # Base de données
     db_path: str = "data/jarvis.db"
     

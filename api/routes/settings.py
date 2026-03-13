@@ -13,25 +13,26 @@ class SettingsUpdateModel(BaseModel):
     gemini_api_key: str = ""
     tavily_api_key: str = ""
     kokoro_voice: str = "ff_siwis"
-    vision_enabled: str = "false"
-    camera_index: str = "0"
-    gmail_enabled: str = "false"
+    vision_enabled: bool = False
+    camera_index: int = 0
+    gmail_enabled: bool = False
     ha_url: str = ""
     ha_token: str = ""
     moonraker_url: str = ""
     bambu_ip: str = ""
     bambu_serial: str = ""
     bambu_access_code: str = ""
-    toast_enabled: str = "true"
+    toast_enabled: bool = True
     wa_default_phone: str = ""
-    wa_notify_on_alerts: str = "false"
+    wa_notify_on_alerts: bool = False
     openweather_api_key: str = ""
     google_maps_api_key: str = ""
     default_city: str = ""
-    proactive_enabled: str = "true"
-    presence_check_interval: str = "5"
-    absence_threshold: str = "600"
-    system_monitor_interval: str = "60"
+    proactive_enabled: bool = True
+    presence_check_interval: int = 5
+    absence_threshold: int = 600
+    system_monitor_interval: int = 60
+    ui_theme: str = "matrix"
 
 @router.get("/api/settings")
 async def get_current_settings():
@@ -100,13 +101,13 @@ async def update_settings(update_data: SettingsUpdateModel):
              tts_instance.voice = update_data.kokoro_voice
 
         # Nouvelles clés
-        dotenv.set_key(env_path, "VISION_ENABLED", update_data.vision_enabled)
+        dotenv.set_key(env_path, "VISION_ENABLED", str(update_data.vision_enabled).lower())
         settings.vision_enabled = update_data.vision_enabled
         
-        dotenv.set_key(env_path, "CAMERA_INDEX", update_data.camera_index)
+        dotenv.set_key(env_path, "CAMERA_INDEX", str(update_data.camera_index))
         settings.camera_index = update_data.camera_index
         
-        dotenv.set_key(env_path, "GMAIL_ENABLED", update_data.gmail_enabled)
+        dotenv.set_key(env_path, "GMAIL_ENABLED", str(update_data.gmail_enabled).lower())
         settings.gmail_enabled = update_data.gmail_enabled
         
         dotenv.set_key(env_path, "HA_URL", update_data.ha_url)
@@ -127,11 +128,11 @@ async def update_settings(update_data: SettingsUpdateModel):
             dotenv.set_key(env_path, "BAMBU_ACCESS_CODE", update_data.bambu_access_code)
             settings.bambu_access_code = update_data.bambu_access_code
 
-        dotenv.set_key(env_path, "TOAST_ENABLED", update_data.toast_enabled)
+        dotenv.set_key(env_path, "TOAST_ENABLED", str(update_data.toast_enabled).lower())
         settings.toast_enabled = update_data.toast_enabled
         dotenv.set_key(env_path, "WA_DEFAULT_PHONE", update_data.wa_default_phone)
         settings.wa_default_phone = update_data.wa_default_phone
-        dotenv.set_key(env_path, "WA_NOTIFY_ON_ALERTS", update_data.wa_notify_on_alerts)
+        dotenv.set_key(env_path, "WA_NOTIFY_ON_ALERTS", str(update_data.wa_notify_on_alerts).lower())
         settings.wa_notify_on_alerts = update_data.wa_notify_on_alerts
 
         # Services Externes
@@ -147,17 +148,21 @@ async def update_settings(update_data: SettingsUpdateModel):
         settings.default_city = update_data.default_city
 
         # Proactivité
-        dotenv.set_key(env_path, "PROACTIVE_ENABLED", update_data.proactive_enabled)
+        dotenv.set_key(env_path, "PROACTIVE_ENABLED", str(update_data.proactive_enabled).lower())
         settings.proactive_enabled = update_data.proactive_enabled
         
-        dotenv.set_key(env_path, "PRESENCE_CHECK_INTERVAL", update_data.presence_check_interval)
-        settings.presence_check_interval = int(update_data.presence_check_interval or 5)
+        dotenv.set_key(env_path, "PRESENCE_CHECK_INTERVAL", str(update_data.presence_check_interval))
+        settings.presence_check_interval = update_data.presence_check_interval
         
-        dotenv.set_key(env_path, "ABSENCE_THRESHOLD", update_data.absence_threshold)
-        settings.absence_threshold = int(update_data.absence_threshold or 600)
+        dotenv.set_key(env_path, "ABSENCE_THRESHOLD", str(update_data.absence_threshold))
+        settings.absence_threshold = update_data.absence_threshold
         
-        dotenv.set_key(env_path, "SYSTEM_MONITOR_INTERVAL", update_data.system_monitor_interval)
-        settings.system_monitor_interval = int(update_data.system_monitor_interval or 60)
+        dotenv.set_key(env_path, "SYSTEM_MONITOR_INTERVAL", str(update_data.system_monitor_interval))
+        settings.system_monitor_interval = update_data.system_monitor_interval
+
+        # Thème UI
+        dotenv.set_key(env_path, "UI_THEME", update_data.ui_theme)
+        settings.ui_theme = update_data.ui_theme
 
         return {"status": "success", "message": "Paramètres sauvegardés avec succès. Redémarrage du serveur conseillé pour les clés."}
     except Exception as e:
